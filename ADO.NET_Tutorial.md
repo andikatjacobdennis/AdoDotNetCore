@@ -87,7 +87,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        string connectionString = "Server=YourServerName;Database=AdoNetDemo;User Id=YourUsername;Password=YourPassword;";
+        string connectionString = "Data Source=.;Initial Catalog=AdoNetDemo;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
         var dbConnectionManager = new DbConnectionManager(connectionString);
 
         using var connection = dbConnectionManager.GetConnection();
