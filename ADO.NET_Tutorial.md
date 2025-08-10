@@ -112,86 +112,168 @@ namespace AdoNetDemo
             _dbConnectionManager = dbConnectionManager;
         }
 
-        // Overloaded methods to support parameterized queries for security
         public void ExecuteNonQuery(string query, SqlParameter[]? parameters = null)
         {
-            using SqlConnection connection = _dbConnectionManager.GetConnection();
-            connection.Open();
-
-            using SqlCommand command = new SqlCommand(query, connection);
-            if (parameters != null)
+            try
             {
-                command.Parameters.AddRange(parameters);
+                using SqlConnection connection = _dbConnectionManager.GetConnection();
+                connection.Open();
+
+                using SqlCommand command = new SqlCommand(query, connection);
+                if (parameters != null)
+                {
+                    command.Parameters.AddRange(parameters);
+                }
+                command.ExecuteNonQuery();
             }
-            command.ExecuteNonQuery();
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+            }
         }
 
         public SqlDataReader ExecuteReader(string query, SqlParameter[]? parameters = null)
         {
-            SqlConnection connection = _dbConnectionManager.GetConnection();
-            connection.Open();
-
-            SqlCommand command = new SqlCommand(query, connection);
-            if (parameters != null)
+            SqlConnection? connection = null;
+            try
             {
-                command.Parameters.AddRange(parameters);
+                connection = _dbConnectionManager.GetConnection();
+                connection.Open();
+
+                SqlCommand command = new SqlCommand(query, connection);
+                if (parameters != null)
+                {
+                    command.Parameters.AddRange(parameters);
+                }
+                return command.ExecuteReader(CommandBehavior.CloseConnection);
             }
-            return command.ExecuteReader(CommandBehavior.CloseConnection);
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+                connection?.Close();
+                throw; // Re-throw the exception to be handled by the caller
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+                connection?.Close();
+                throw; // Re-throw the exception to be handled by the caller
+            }
         }
 
         public object ExecuteScalar(string query, SqlParameter[]? parameters = null)
         {
-            using SqlConnection connection = _dbConnectionManager.GetConnection();
-            connection.Open();
-
-            using SqlCommand command = new SqlCommand(query, connection);
-            if (parameters != null)
+            try
             {
-                command.Parameters.AddRange(parameters);
+                using SqlConnection connection = _dbConnectionManager.GetConnection();
+                connection.Open();
+
+                using SqlCommand command = new SqlCommand(query, connection);
+                if (parameters != null)
+                {
+                    command.Parameters.AddRange(parameters);
+                }
+                return command.ExecuteScalar();
             }
-            return command.ExecuteScalar();
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+                return DBNull.Value;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+                return DBNull.Value;
+            }
         }
 
         public SqlDataReader ExecuteStoredProcedure(string procedureName, SqlParameter[]? parameters = null)
         {
-            SqlConnection connection = _dbConnectionManager.GetConnection();
-            connection.Open();
-
-            SqlCommand command = new SqlCommand(procedureName, connection);
-            command.CommandType = CommandType.StoredProcedure;
-
-            if (parameters != null)
+            SqlConnection? connection = null;
+            try
             {
-                command.Parameters.AddRange(parameters);
-            }
+                connection = _dbConnectionManager.GetConnection();
+                connection.Open();
 
-            return command.ExecuteReader(CommandBehavior.CloseConnection);
+                SqlCommand command = new SqlCommand(procedureName, connection);
+                command.CommandType = CommandType.StoredProcedure;
+
+                if (parameters != null)
+                {
+                    command.Parameters.AddRange(parameters);
+                }
+
+                return command.ExecuteReader(CommandBehavior.CloseConnection);
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+                connection?.Close();
+                throw; // Re-throw the exception
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+                connection?.Close();
+                throw; // Re-throw the exception
+            }
         }
 
         public async Task<SqlDataReader> ExecuteReaderAsync(string query, SqlParameter[]? parameters = null)
         {
-            SqlConnection connection = _dbConnectionManager.GetConnection();
-            await connection.OpenAsync();
-
-            SqlCommand command = new SqlCommand(query, connection);
-            if (parameters != null)
+            SqlConnection? connection = null;
+            try
             {
-                command.Parameters.AddRange(parameters);
+                connection = _dbConnectionManager.GetConnection();
+                await connection.OpenAsync();
+
+                SqlCommand command = new SqlCommand(query, connection);
+                if (parameters != null)
+                {
+                    command.Parameters.AddRange(parameters);
+                }
+                return await command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
             }
-            return await command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+                connection?.Close();
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+                connection?.Close();
+                throw;
+            }
         }
 
         public async Task ExecuteNonQueryAsync(string query, SqlParameter[]? parameters = null)
         {
-            using SqlConnection connection = _dbConnectionManager.GetConnection();
-            await connection.OpenAsync();
-
-            using SqlCommand command = new SqlCommand(query, connection);
-            if (parameters != null)
+            try
             {
-                command.Parameters.AddRange(parameters);
+                using SqlConnection connection = _dbConnectionManager.GetConnection();
+                await connection.OpenAsync();
+
+                using SqlCommand command = new SqlCommand(query, connection);
+                if (parameters != null)
+                {
+                    command.Parameters.AddRange(parameters);
+                }
+                await command.ExecuteNonQueryAsync();
             }
-            await command.ExecuteNonQueryAsync();
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+            }
         }
     }
 }
@@ -218,31 +300,40 @@ namespace AdoNetDemo
             _dbCommandExecutor = dbCommandExecutor;
         }
 
-        // Check if database exists using a parameterized query
         public bool DatabaseExists(string databaseName)
         {
-            // Build connection string with the same server & credentials but database = master
-            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(_dbCommandExecutor._dbConnectionManager.GetConnection().ConnectionString)
+            try
             {
-                InitialCatalog = "master"  // Override database to master
-            };
+                SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(_dbCommandExecutor._dbConnectionManager.GetConnection().ConnectionString)
+                {
+                    InitialCatalog = "master"
+                };
 
-            string query = "SELECT database_id FROM sys.databases WHERE Name = @dbName";
-            SqlParameter[] parameters = {
-                new SqlParameter("@dbName", SqlDbType.NVarChar) { Value = databaseName }
-            };
+                string query = "SELECT database_id FROM sys.databases WHERE Name = @dbName";
+                SqlParameter[] parameters = {
+                    new SqlParameter("@dbName", SqlDbType.NVarChar) { Value = databaseName }
+                };
 
-            // Use the ExecuteScalar method to securely check for database existence
-            using SqlConnection connection = new SqlConnection(builder.ConnectionString);
-            connection.Open();
-            using SqlCommand command = new SqlCommand(query, connection);
-            command.Parameters.AddRange(parameters);
+                using SqlConnection connection = new SqlConnection(builder.ConnectionString);
+                connection.Open();
+                using SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddRange(parameters);
 
-            object result = command.ExecuteScalar();
-            return result != null && result != DBNull.Value;
+                object result = command.ExecuteScalar();
+                return result != null && result != DBNull.Value;
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"Database existence check failed: {ex.Message}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred during database check: {ex.Message}");
+                return false;
+            }
         }
 
-        // Create method now uses a parameterized query to prevent SQL injection
         public void CreateEmployee(string name, int age)
         {
             string query = "INSERT INTO Employees (Name, Age) VALUES (@name, @age)";
@@ -253,19 +344,24 @@ namespace AdoNetDemo
             _dbCommandExecutor.ExecuteNonQuery(query, parameters);
         }
 
-        // Read
         public void GetEmployees()
         {
             string query = "SELECT * FROM Employees";
-            using SqlDataReader reader = _dbCommandExecutor.ExecuteReader(query);
-
-            while (reader.Read())
+            try
             {
-                Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Age: {reader["Age"]}");
+                using SqlDataReader reader = _dbCommandExecutor.ExecuteReader(query);
+                while (reader.Read())
+                {
+                    Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Age: {reader["Age"]}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // The error message is handled in DbCommandExecutor, here we just catch any propagated errors
+                Console.WriteLine($"Failed to retrieve employees: {ex.Message}");
             }
         }
 
-        // Update method uses a parameterized query to prevent SQL injection
         public void UpdateEmployee(int id, string name, int age)
         {
             string query = "UPDATE Employees SET Name = @name, Age = @age WHERE Id = @id";
@@ -277,7 +373,6 @@ namespace AdoNetDemo
             _dbCommandExecutor.ExecuteNonQuery(query, parameters);
         }
 
-        // Delete method uses a parameterized query to prevent SQL injection
         public void DeleteEmployee(int id)
         {
             string query = "DELETE FROM Employees WHERE Id = @id";
@@ -286,15 +381,21 @@ namespace AdoNetDemo
             };
             _dbCommandExecutor.ExecuteNonQuery(query, parameters);
         }
-        
+
         public void GetEmployeesUsingStoredProcedure()
         {
             string procedureName = "sp_GetEmployees";
-            using SqlDataReader reader = _dbCommandExecutor.ExecuteStoredProcedure(procedureName);
-
-            while (reader.Read())
+            try
             {
-                Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Age: {reader["Age"]}");
+                using SqlDataReader reader = _dbCommandExecutor.ExecuteStoredProcedure(procedureName);
+                while (reader.Read())
+                {
+                    Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Age: {reader["Age"]}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to retrieve employees from stored procedure: {ex.Message}");
             }
         }
 
@@ -302,13 +403,21 @@ namespace AdoNetDemo
         {
             string query = "SELECT * FROM Employees";
             DataSet dataSet = new DataSet();
-
-            using SqlConnection connection = _dbCommandExecutor._dbConnectionManager.GetConnection();
-            connection.Open();
-
-            SqlDataAdapter adapter = new SqlDataAdapter(query, connection);
-            adapter.Fill(dataSet);
-
+            try
+            {
+                using SqlConnection connection = _dbCommandExecutor._dbConnectionManager.GetConnection();
+                connection.Open();
+                SqlDataAdapter adapter = new SqlDataAdapter(query, connection);
+                adapter.Fill(dataSet);
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"Database error filling DataSet: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred filling DataSet: {ex.Message}");
+            }
             return dataSet;
         }
 
@@ -316,20 +425,29 @@ namespace AdoNetDemo
         {
             DataSet dataSet = GetEmployeesDataSet();
 
-            foreach (DataRow row in dataSet.Tables[0].Rows)
+            if (dataSet.Tables.Count > 0)
             {
-                Console.WriteLine($"Id: {row["Id"]}, Name: {row["Name"]}, Age: {row["Age"]}");
+                foreach (DataRow row in dataSet.Tables[0].Rows)
+                {
+                    Console.WriteLine($"Id: {row["Id"]}, Name: {row["Name"]}, Age: {row["Age"]}");
+                }
             }
         }
 
         public async Task GetEmployeesAsync()
         {
             string query = "SELECT * FROM Employees";
-            using SqlDataReader reader = await _dbCommandExecutor.ExecuteReaderAsync(query);
-
-            while (await reader.ReadAsync())
+            try
             {
-                Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Age: {reader["Age"]}");
+                using SqlDataReader reader = await _dbCommandExecutor.ExecuteReaderAsync(query);
+                while (await reader.ReadAsync())
+                {
+                    Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Age: {reader["Age"]}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to retrieve employees asynchronously: {ex.Message}");
             }
         }
     }
@@ -375,40 +493,49 @@ namespace AdoNetDemo
             DbCommandExecutor dbCommandExecutor = new DbCommandExecutor(dbConnectionManager);
             EmployeeRepository employeeRepository = new EmployeeRepository(dbCommandExecutor);
 
-            if (employeeRepository.DatabaseExists(databaseName))
+            try
             {
-                Console.WriteLine("Database exists.");
+                if (employeeRepository.DatabaseExists(databaseName))
+                {
+                    Console.WriteLine("Database exists.");
 
-                Console.WriteLine("--- Reading all employees ---");
-                employeeRepository.GetEmployees();
+                    Console.WriteLine("--- Reading all employees ---");
+                    employeeRepository.GetEmployees();
 
-                Console.WriteLine("\n--- Creating a new employee ---");
-                // Using a parameterized query for a secure INSERT operation
-                employeeRepository.CreateEmployee("New Employee", 35);
-                employeeRepository.GetEmployees();
+                    Console.WriteLine("\n--- Creating a new employee ---");
+                    // Using a parameterized query for a secure INSERT operation
+                    employeeRepository.CreateEmployee("New Employee", 35);
+                    employeeRepository.GetEmployees();
 
-                Console.WriteLine("\n--- Updating an employee (Id: 3) ---");
-                // Using a parameterized query for a secure UPDATE operation
-                employeeRepository.UpdateEmployee(3, "Updated Employee", 40);
-                employeeRepository.GetEmployees();
+                    Console.WriteLine("\n--- Updating an employee (Id: 3) ---");
+                    // Using a parameterized query for a secure UPDATE operation
+                    employeeRepository.UpdateEmployee(3, "Updated Employee", 40);
+                    employeeRepository.GetEmployees();
 
-                Console.WriteLine("\n--- Deleting an employee (Id: 4) ---");
-                // Using a parameterized query for a secure DELETE operation
-                employeeRepository.DeleteEmployee(4);
-                employeeRepository.GetEmployees();
+                    Console.WriteLine("\n--- Deleting an employee (Id: 4) ---");
+                    // Using a parameterized query for a secure DELETE operation
+                    employeeRepository.DeleteEmployee(4);
+                    employeeRepository.GetEmployees();
 
-                Console.WriteLine("\n--- Reading all employees using a stored procedure ---");
-                employeeRepository.GetEmployeesUsingStoredProcedure();
+                    Console.WriteLine("\n--- Reading all employees using a stored procedure ---");
+                    employeeRepository.GetEmployeesUsingStoredProcedure();
 
-                Console.WriteLine("\n--- Reading all employees using a DataSet ---");
-                employeeRepository.GetEmployeesUsingDataSet();
+                    Console.WriteLine("\n--- Reading all employees using a DataSet ---");
+                    employeeRepository.GetEmployeesUsingDataSet();
 
-                Console.WriteLine("\n--- Reading all employees asynchronously ---");
-                await employeeRepository.GetEmployeesAsync();
+                    Console.WriteLine("\n--- Reading all employees asynchronously ---");
+                    await employeeRepository.GetEmployeesAsync();
+                }
+                else
+                {
+                    Console.WriteLine("Database does not exist. Please run the setup script first.");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("Database does not exist. Please run the setup script first.");
+                // This catch block handles any unhandled exceptions from the repository.
+                // In a real application, you would log this error.
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
             }
 
             Console.WriteLine("\n--- Program complete ---");
