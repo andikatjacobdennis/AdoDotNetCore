@@ -97,6 +97,54 @@ dotnet run
 
 ---
 
+## Class Diagram
+
+This UML class diagram illustrates the relationships and dependencies between the main classes in the project.
+
+```mermaid
+classDiagram
+    class Program {
+        +Main()
+    }
+
+    class DbConnectionManager {
+        -string _connectionString
+        +GetConnection() SqlConnection
+    }
+
+    class DbCommandExecutor {
+        internal readonly DbConnectionManager _dbConnectionManager
+        +ExecuteNonQuery(query: string) void
+        +ExecuteReader(query: string) SqlDataReader
+        +ExecuteScalar(query: string) object
+        +ExecuteStoredProcedure(name: string, params: SqlParameter[]) SqlDataReader
+        +ExecuteReaderAsync(query: string) Task~SqlDataReader~
+        +ExecuteNonQueryAsync(query: string) Task
+    }
+
+    class EmployeeRepository {
+        -readonly DbCommandExecutor _dbCommandExecutor
+        +DatabaseExists(name: string) bool
+        +CreateEmployee(name: string, age: int) void
+        +GetEmployees() void
+        +UpdateEmployee(id: int, name: string, age: int) void
+        +DeleteEmployee(id: int) void
+        +GetEmployeesUsingStoredProcedure() void
+        +GetEmployeesDataSet() DataSet
+        +GetEmployeesUsingDataSet() void
+        +GetEmployeesAsync() Task
+    }
+
+    Program ..> DbConnectionManager : uses
+    Program ..> DbCommandExecutor : uses
+    Program ..> EmployeeRepository : uses
+
+    DbCommandExecutor o-- DbConnectionManager : manages
+    EmployeeRepository o-- DbCommandExecutor : executes
+```
+
+---
+
 ## Notes
 
 * Always use parameterized queries or stored procedures in production to prevent SQL injection.
