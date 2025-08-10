@@ -109,22 +109,25 @@ classDiagram
 
     class DbConnectionManager {
         -string _connectionString
+        +DbConnectionManager(connectionString: string)
         +GetConnection() SqlConnection
     }
 
     class DbCommandExecutor {
-        internal readonly DbConnectionManager _dbConnectionManager
-        +ExecuteNonQuery(query: string) void
-        +ExecuteReader(query: string) SqlDataReader
-        +ExecuteScalar(query: string) object
-        +ExecuteStoredProcedure(name: string, params: SqlParameter[]) SqlDataReader
-        +ExecuteReaderAsync(query: string) Task~SqlDataReader~
-        +ExecuteNonQueryAsync(query: string) Task
+        ~readonly DbConnectionManager _dbConnectionManager
+        +DbCommandExecutor(dbConnectionManager: DbConnectionManager)
+        +ExecuteNonQuery(query: string, parameters: SqlParameter[]?) void
+        +ExecuteReader(query: string, parameters: SqlParameter[]?) SqlDataReader
+        +ExecuteScalar(query: string, parameters: SqlParameter[]?) object
+        +ExecuteStoredProcedure(procedureName: string, parameters: SqlParameter[]?) SqlDataReader
+        +ExecuteReaderAsync(query: string, parameters: SqlParameter[]?) Task~SqlDataReader~
+        +ExecuteNonQueryAsync(query: string, parameters: SqlParameter[]?) Task
     }
 
     class EmployeeRepository {
         -readonly DbCommandExecutor _dbCommandExecutor
-        +DatabaseExists(name: string) bool
+        +EmployeeRepository(dbCommandExecutor: DbCommandExecutor)
+        +DatabaseExists(databaseName: string) bool
         +CreateEmployee(name: string, age: int) void
         +GetEmployees() void
         +UpdateEmployee(id: int, name: string, age: int) void
