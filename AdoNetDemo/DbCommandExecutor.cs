@@ -14,37 +14,37 @@ namespace AdoNetDemo
 
         public void ExecuteNonQuery(string query)
         {
-            using var connection = _dbConnectionManager.GetConnection();
+            using SqlConnection connection = _dbConnectionManager.GetConnection();
             connection.Open();
 
-            using var command = new SqlCommand(query, connection);
+            using SqlCommand command = new SqlCommand(query, connection);
             command.ExecuteNonQuery();
         }
 
         public SqlDataReader ExecuteReader(string query)
         {
-            var connection = _dbConnectionManager.GetConnection();
+            SqlConnection connection = _dbConnectionManager.GetConnection();
             connection.Open();
 
-            var command = new SqlCommand(query, connection);
+            SqlCommand command = new SqlCommand(query, connection);
             return command.ExecuteReader(CommandBehavior.CloseConnection);
         }
 
         public object ExecuteScalar(string query)
         {
-            using var connection = _dbConnectionManager.GetConnection();
+            using SqlConnection connection = _dbConnectionManager.GetConnection();
             connection.Open();
 
-            using var command = new SqlCommand(query, connection);
+            using SqlCommand command = new SqlCommand(query, connection);
             return command.ExecuteScalar();
         }
 
         public SqlDataReader ExecuteStoredProcedure(string procedureName, SqlParameter[]? parameters = null)
         {
-            var connection = _dbConnectionManager.GetConnection();
+            SqlConnection connection = _dbConnectionManager.GetConnection();
             connection.Open();
 
-            var command = new SqlCommand(procedureName, connection);
+            SqlCommand command = new SqlCommand(procedureName, connection);
             command.CommandType = CommandType.StoredProcedure;
 
             if (parameters != null)
@@ -57,19 +57,19 @@ namespace AdoNetDemo
 
         public async Task<SqlDataReader> ExecuteReaderAsync(string query)
         {
-            var connection = _dbConnectionManager.GetConnection();
+            SqlConnection connection = _dbConnectionManager.GetConnection();
             await connection.OpenAsync();
 
-            var command = new SqlCommand(query, connection);
+            SqlCommand command = new SqlCommand(query, connection);
             return await command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
         }
 
         public async Task ExecuteNonQueryAsync(string query)
         {
-            using var connection = _dbConnectionManager.GetConnection();
+            using SqlConnection connection = _dbConnectionManager.GetConnection();
             await connection.OpenAsync();
 
-            using var command = new SqlCommand(query, connection);
+            using SqlCommand command = new SqlCommand(query, connection);
             await command.ExecuteNonQueryAsync();
         }
     }

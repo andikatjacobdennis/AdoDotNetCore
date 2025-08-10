@@ -12,6 +12,28 @@ namespace AdoNetDemo
             _dbCommandExecutor = dbCommandExecutor;
         }
 
+        // Check if database exists
+        public bool DatabaseExists(string databaseName)
+        {
+            // Build connection string with the same server & credentials but database = master
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(_dbCommandExecutor._dbConnectionManager.GetConnection().ConnectionString)
+            {
+                InitialCatalog = "master"  // Override database to master
+            };
+
+            using SqlConnection connection = new SqlConnection(builder.ConnectionString);
+            connection.Open();
+
+            string query = "SELECT database_id FROM sys.databases WHERE Name = @dbName";
+            using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@dbName", databaseName);
+
+            object result = command.ExecuteScalar();
+            bool isDbExist = result != null && result != DBNull.Value;
+
+            return isDbExist;
+        }
+
         // Create
         public void CreateEmployee(string name, int age)
         {
@@ -23,7 +45,7 @@ namespace AdoNetDemo
         public void GetEmployees()
         {
             string query = "SELECT * FROM Employees";
-            using var reader = _dbCommandExecutor.ExecuteReader(query);
+            using SqlDataReader reader = _dbCommandExecutor.ExecuteReader(query);
 
             while (reader.Read())
             {
@@ -48,7 +70,7 @@ namespace AdoNetDemo
         public void GetEmployeesUsingStoredProcedure()
         {
             string procedureName = "sp_GetEmployees";
-            using var reader = _dbCommandExecutor.ExecuteStoredProcedure(procedureName);
+            using SqlDataReader reader = _dbCommandExecutor.ExecuteStoredProcedure(procedureName);
 
             while (reader.Read())
             {
@@ -59,12 +81,12 @@ namespace AdoNetDemo
         public DataSet GetEmployeesDataSet()
         {
             string query = "SELECT * FROM Employees";
-            var dataSet = new DataSet();
+            DataSet dataSet = new DataSet();
 
-            using var connection = _dbCommandExecutor._dbConnectionManager.GetConnection();
+            using SqlConnection connection = _dbCommandExecutor._dbConnectionManager.GetConnection();
             connection.Open();
 
-            var adapter = new SqlDataAdapter(query, connection);
+            SqlDataAdapter adapter = new SqlDataAdapter(query, connection);
             adapter.Fill(dataSet);
 
             return dataSet;
@@ -72,7 +94,7 @@ namespace AdoNetDemo
 
         public void GetEmployeesUsingDataSet()
         {
-            var dataSet = GetEmployeesDataSet();
+            DataSet dataSet = GetEmployeesDataSet();
 
             foreach (DataRow row in dataSet.Tables[0].Rows)
             {
@@ -83,7 +105,7 @@ namespace AdoNetDemo
         public async Task GetEmployeesAsync()
         {
             string query = "SELECT * FROM Employees";
-            using var reader = await _dbCommandExecutor.ExecuteReaderAsync(query);
+            using SqlDataReader reader = await _dbCommandExecutor.ExecuteReaderAsync(query);
 
             while (await reader.ReadAsync())
             {

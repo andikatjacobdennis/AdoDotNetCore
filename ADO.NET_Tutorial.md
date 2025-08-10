@@ -34,21 +34,32 @@ dotnet add package Microsoft.Data.SqlClient
 Create a database and a sample `Employees` table using the following SQL script:
 
 ```sql
-CREATE DATABASE AdoNetDemo;
+IF DB_ID('AdoNetDemoDb') IS NULL
+BEGIN
+    CREATE DATABASE AdoNetDemoDb;
+END
 GO
 
-USE AdoNetDemo;
+USE AdoNetDemoDb;
 GO
 
-CREATE TABLE Employees (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(100),
-    Age INT
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Employees')
+BEGIN
+    CREATE TABLE Employees (
+        Id INT PRIMARY KEY IDENTITY(1,1),
+        Name NVARCHAR(100),
+        Age INT
+    );
+
+    INSERT INTO Employees (Name, Age) VALUES ('John Doe', 30);
+    INSERT INTO Employees (Name, Age) VALUES ('Jane Doe', 25);
+END
 GO
 
-INSERT INTO Employees (Name, Age) VALUES ('John Doe', 30);
-INSERT INTO Employees (Name, Age) VALUES ('Jane Doe', 25);
+IF NOT EXISTS (SELECT * FROM sys.procedures WHERE name = 'sp_GetEmployees')
+BEGIN
+    EXEC('CREATE PROCEDURE sp_GetEmployees AS BEGIN SELECT * FROM Employees; END');
+END
 GO
 ```
 
@@ -87,8 +98,9 @@ class Program
 {
     static void Main(string[] args)
     {
-        string connectionString = "Data Source=.;Initial Catalog=AdoNetDemo;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
-        var dbConnectionManager = new DbConnectionManager(connectionString);
+        string serverName = ".";
+        string databaseName = "AdoNetDemoDb";
+        string connectionString = $"Data Source={serverName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";        var dbConnectionManager = new DbConnectionManager(connectionString);
 
         using var connection = dbConnectionManager.GetConnection();
         connection.Open();
@@ -107,40 +119,77 @@ Create `DbCommandExecutor` to handle SQL commands:
 using Microsoft.Data.SqlClient;
 using System.Data;
 
-public class DbCommandExecutor
+namespace AdoNetDemo
 {
-    private readonly DbConnectionManager _dbConnectionManager;
-
-    public DbCommandExecutor(DbConnectionManager dbConnectionManager)
+    public class DbCommandExecutor
     {
-        _dbConnectionManager = dbConnectionManager;
-    }
+        internal readonly DbConnectionManager _dbConnectionManager;
 
-    public void ExecuteNonQuery(string query)
-    {
-        using var connection = _dbConnectionManager.GetConnection();
-        connection.Open();
+        public DbCommandExecutor(DbConnectionManager dbConnectionManager)
+        {
+            _dbConnectionManager = dbConnectionManager;
+        }
 
-        using var command = new SqlCommand(query, connection);
-        command.ExecuteNonQuery();
-    }
+        public void ExecuteNonQuery(string query)
+        {
+            using var connection = _dbConnectionManager.GetConnection();
+            connection.Open();
 
-    public SqlDataReader ExecuteReader(string query)
-    {
-        var connection = _dbConnectionManager.GetConnection();
-        connection.Open();
+            using var command = new SqlCommand(query, connection);
+            command.ExecuteNonQuery();
+        }
 
-        var command = new SqlCommand(query, connection);
-        return command.ExecuteReader(CommandBehavior.CloseConnection);
-    }
+        public SqlDataReader ExecuteReader(string query)
+        {
+            var connection = _dbConnectionManager.GetConnection();
+            connection.Open();
 
-    public object ExecuteScalar(string query)
-    {
-        using var connection = _dbConnectionManager.GetConnection();
-        connection.Open();
+            var command = new SqlCommand(query, connection);
+            return command.ExecuteReader(CommandBehavior.CloseConnection);
+        }
 
-        using var command = new SqlCommand(query, connection);
-        return command.ExecuteScalar();
+        public object ExecuteScalar(string query)
+        {
+            using var connection = _dbConnectionManager.GetConnection();
+            connection.Open();
+
+            using var command = new SqlCommand(query, connection);
+            return command.ExecuteScalar();
+        }
+
+        public SqlDataReader ExecuteStoredProcedure(string procedureName, SqlParameter[]? parameters = null)
+        {
+            var connection = _dbConnectionManager.GetConnection();
+            connection.Open();
+
+            var command = new SqlCommand(procedureName, connection);
+            command.CommandType = CommandType.StoredProcedure;
+
+            if (parameters != null)
+            {
+                command.Parameters.AddRange(parameters);
+            }
+
+            return command.ExecuteReader(CommandBehavior.CloseConnection);
+        }
+
+        public async Task<SqlDataReader> ExecuteReaderAsync(string query)
+        {
+            var connection = _dbConnectionManager.GetConnection();
+            await connection.OpenAsync();
+
+            var command = new SqlCommand(query, connection);
+            return await command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
+        }
+
+        public async Task ExecuteNonQueryAsync(string query)
+        {
+            using var connection = _dbConnectionManager.GetConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(query, connection);
+            await command.ExecuteNonQueryAsync();
+        }
     }
 }
 ```
@@ -153,48 +202,119 @@ Implement `EmployeeRepository` to perform CRUD on the `Employees` table:
 
 ```csharp
 using Microsoft.Data.SqlClient;
-using System;
+using System.Data;
 
-public class EmployeeRepository
+namespace AdoNetDemo
 {
-    private readonly DbCommandExecutor _dbCommandExecutor;
-
-    public EmployeeRepository(DbCommandExecutor dbCommandExecutor)
+    public class EmployeeRepository
     {
-        _dbCommandExecutor = dbCommandExecutor;
-    }
+        private readonly DbCommandExecutor _dbCommandExecutor;
 
-    // Create
-    public void CreateEmployee(string name, int age)
-    {
-        string query = $"INSERT INTO Employees (Name, Age) VALUES ('{name}', {age})";
-        _dbCommandExecutor.ExecuteNonQuery(query);
-    }
-
-    // Read
-    public void GetEmployees()
-    {
-        string query = "SELECT * FROM Employees";
-        using var reader = _dbCommandExecutor.ExecuteReader(query);
-
-        while (reader.Read())
+        public EmployeeRepository(DbCommandExecutor dbCommandExecutor)
         {
-            Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Age: {reader["Age"]}");
+            _dbCommandExecutor = dbCommandExecutor;
         }
-    }
 
-    // Update
-    public void UpdateEmployee(int id, string name, int age)
-    {
-        string query = $"UPDATE Employees SET Name = '{name}', Age = {age} WHERE Id = {id}";
-        _dbCommandExecutor.ExecuteNonQuery(query);
-    }
+        // Check if database exists
+        public bool DatabaseExists(string databaseName)
+        {
+            // Build connection string with the same server & credentials but database = master
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(_dbCommandExecutor._dbConnectionManager.GetConnection().ConnectionString)
+            {
+                InitialCatalog = "master"  // Override database to master
+            };
 
-    // Delete
-    public void DeleteEmployee(int id)
-    {
-        string query = $"DELETE FROM Employees WHERE Id = {id}";
-        _dbCommandExecutor.ExecuteNonQuery(query);
+            using SqlConnection connection = new SqlConnection(builder.ConnectionString);
+            connection.Open();
+
+            string query = "SELECT database_id FROM sys.databases WHERE Name = @dbName";
+            using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@dbName", databaseName);
+
+            object result = command.ExecuteScalar();
+            bool isDbExist = result != null && result != DBNull.Value;
+
+            return isDbExist;
+        }
+
+        // Create
+        public void CreateEmployee(string name, int age)
+        {
+            string query = $"INSERT INTO Employees (Name, Age) VALUES ('{name}', {age})";
+            _dbCommandExecutor.ExecuteNonQuery(query);
+        }
+
+        // Read
+        public void GetEmployees()
+        {
+            string query = "SELECT * FROM Employees";
+            using var reader = _dbCommandExecutor.ExecuteReader(query);
+
+            while (reader.Read())
+            {
+                Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Age: {reader["Age"]}");
+            }
+        }
+
+        // Update
+        public void UpdateEmployee(int id, string name, int age)
+        {
+            string query = $"UPDATE Employees SET Name = '{name}', Age = {age} WHERE Id = {id}";
+            _dbCommandExecutor.ExecuteNonQuery(query);
+        }
+
+        // Delete
+        public void DeleteEmployee(int id)
+        {
+            string query = $"DELETE FROM Employees WHERE Id = {id}";
+            _dbCommandExecutor.ExecuteNonQuery(query);
+        }
+
+        public void GetEmployeesUsingStoredProcedure()
+        {
+            string procedureName = "sp_GetEmployees";
+            using var reader = _dbCommandExecutor.ExecuteStoredProcedure(procedureName);
+
+            while (reader.Read())
+            {
+                Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Age: {reader["Age"]}");
+            }
+        }
+
+        public DataSet GetEmployeesDataSet()
+        {
+            string query = "SELECT * FROM Employees";
+            var dataSet = new DataSet();
+
+            using var connection = _dbCommandExecutor._dbConnectionManager.GetConnection();
+            connection.Open();
+
+            var adapter = new SqlDataAdapter(query, connection);
+            adapter.Fill(dataSet);
+
+            return dataSet;
+        }
+
+        public void GetEmployeesUsingDataSet()
+        {
+            var dataSet = GetEmployeesDataSet();
+
+            foreach (DataRow row in dataSet.Tables[0].Rows)
+            {
+                Console.WriteLine($"Id: {row["Id"]}, Name: {row["Name"]}, Age: {row["Age"]}");
+            }
+        }
+
+        public async Task GetEmployeesAsync()
+        {
+            string query = "SELECT * FROM Employees";
+            using var reader = await _dbCommandExecutor.ExecuteReaderAsync(query);
+
+            while (await reader.ReadAsync())
+            {
+                Console.WriteLine($"Id: {reader["Id"]}, Name: {reader["Name"]}, Age: {reader["Age"]}");
+            }
+        }
     }
 }
 ```
@@ -202,17 +322,6 @@ public class EmployeeRepository
 ---
 
 ## Step 6: Using Stored Procedures
-
-Create a stored procedure in SQL Server:
-
-```sql
-CREATE PROCEDURE sp_GetEmployees
-AS
-BEGIN
-    SELECT * FROM Employees;
-END
-GO
-```
 
 Add this method to `DbCommandExecutor`:
 
@@ -349,45 +458,55 @@ public async Task GetEmployeesAsync()
 ## Final Example Usage (`Program.cs`)
 
 ```csharp
-using System;
-using System.Data;
-using System.Threading.Tasks;
-
-class Program
+namespace AdoNetDemo
 {
-    static async Task Main(string[] args)
+    class Program
     {
-        string connectionString = "Server=YourServerName;Database=AdoNetDemo;User Id=YourUsername;Password=YourPassword;";
+        static async Task Main()
+        {
+            string serverName = ".";
+            string databaseName = "AdoNetDemoDb";
+            string connectionString = $"Data Source={serverName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
 
-        var dbConnectionManager = new DbConnectionManager(connectionString);
-        var dbCommandExecutor = new DbCommandExecutor(dbConnectionManager);
-        var employeeRepository = new EmployeeRepository(dbCommandExecutor);
+            DbConnectionManager dbConnectionManager = new DbConnectionManager(connectionString);
+            DbCommandExecutor dbCommandExecutor = new DbCommandExecutor(dbConnectionManager);
+            EmployeeRepository employeeRepository = new EmployeeRepository(dbCommandExecutor);
 
-        Console.WriteLine("--- Reading all employees ---");
-        employeeRepository.GetEmployees();
+            if (employeeRepository.DatabaseExists(databaseName))
+            {
+                Console.WriteLine("Database exists.");
 
-        Console.WriteLine("\n--- Creating a new employee ---");
-        employeeRepository.CreateEmployee("New Employee", 35);
-        employeeRepository.GetEmployees();
+                Console.WriteLine("--- Reading all employees ---");
+                employeeRepository.GetEmployees();
 
-        Console.WriteLine("\n--- Updating an employee (Id: 3) ---");
-        employeeRepository.UpdateEmployee(3, "Updated Employee", 40);
-        employeeRepository.GetEmployees();
+                Console.WriteLine("\n--- Creating a new employee ---");
+                employeeRepository.CreateEmployee("New Employee", 35);
+                employeeRepository.GetEmployees();
 
-        Console.WriteLine("\n--- Deleting an employee (Id: 4) ---");
-        employeeRepository.DeleteEmployee(4);
-        employeeRepository.GetEmployees();
+                Console.WriteLine("\n--- Updating an employee (Id: 3) ---");
+                employeeRepository.UpdateEmployee(3, "Updated Employee", 40);
+                employeeRepository.GetEmployees();
 
-        Console.WriteLine("\n--- Reading all employees using a stored procedure ---");
-        employeeRepository.GetEmployeesUsingStoredProcedure();
+                Console.WriteLine("\n--- Deleting an employee (Id: 4) ---");
+                employeeRepository.DeleteEmployee(4);
+                employeeRepository.GetEmployees();
 
-        Console.WriteLine("\n--- Reading all employees using a DataSet ---");
-        employeeRepository.GetEmployeesUsingDataSet();
+                Console.WriteLine("\n--- Reading all employees using a stored procedure ---");
+                employeeRepository.GetEmployeesUsingStoredProcedure();
 
-        Console.WriteLine("\n--- Reading all employees asynchronously ---");
-        await employeeRepository.GetEmployeesAsync();
+                Console.WriteLine("\n--- Reading all employees using a DataSet ---");
+                employeeRepository.GetEmployeesUsingDataSet();
 
-        Console.WriteLine("\n--- Program complete ---");
+                Console.WriteLine("\n--- Reading all employees asynchronously ---");
+                await employeeRepository.GetEmployeesAsync();
+            }
+            else
+            {
+                Console.WriteLine("Database does not exist.");
+            }
+
+            Console.WriteLine("\n--- Program complete ---");
+        }
     }
 }
 ```

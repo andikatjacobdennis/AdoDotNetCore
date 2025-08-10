@@ -27,7 +27,7 @@ For a detailed step-by-step guide, please see the full tutorial:
 ## Prerequisites
 
 - [.NET Core 9.0 SDK](https://dotnet.microsoft.com/en-us/download) or later installed  
-- SQL Server instance (2019 or later recommended)  
+- SQL Server instance (2022 or later recommended)  
 - Basic knowledge of C# and SQL  
 
 ---
@@ -37,35 +37,41 @@ For a detailed step-by-step guide, please see the full tutorial:
 1. Create the database and table in SQL Server:
 
 ```sql
-CREATE DATABASE AdoNetDemo;
-GO
-
-USE AdoNetDemo;
-GO
-
-CREATE TABLE Employees (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(100),
-    Age INT
-);
-GO
-
-INSERT INTO Employees (Name, Age) VALUES ('John Doe', 30);
-INSERT INTO Employees (Name, Age) VALUES ('Jane Doe', 25);
-GO
-
-CREATE PROCEDURE sp_GetEmployees
-AS
+IF DB_ID('AdoNetDemoDb') IS NULL
 BEGIN
-    SELECT * FROM Employees;
+    CREATE DATABASE AdoNetDemoDb;
 END
 GO
-````
+
+USE AdoNetDemoDb;
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Employees')
+BEGIN
+    CREATE TABLE Employees (
+        Id INT PRIMARY KEY IDENTITY(1,1),
+        Name NVARCHAR(100),
+        Age INT
+    );
+
+    INSERT INTO Employees (Name, Age) VALUES ('John Doe', 30);
+    INSERT INTO Employees (Name, Age) VALUES ('Jane Doe', 25);
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.procedures WHERE name = 'sp_GetEmployees')
+BEGIN
+    EXEC('CREATE PROCEDURE sp_GetEmployees AS BEGIN SELECT * FROM Employees; END');
+END
+GO
+```
 
 2. Update the connection string in `Program.cs`:
 
 ```csharp
-string connectionString = "Data Source=.;Initial Catalog=AdoNetDemo;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
+string serverName = ".";
+string databaseName = "AdoNetDemoDb";
+string connectionString = $"Data Source={serverName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
 ```
 
 ---
