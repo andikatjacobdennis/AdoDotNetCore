@@ -12,30 +12,43 @@ namespace AdoNetDemo
             _dbConnectionManager = dbConnectionManager;
         }
 
-        public void ExecuteNonQuery(string query)
+        // Overloaded methods to support parameterized queries for security
+        public void ExecuteNonQuery(string query, SqlParameter[]? parameters = null)
         {
             using SqlConnection connection = _dbConnectionManager.GetConnection();
             connection.Open();
 
             using SqlCommand command = new SqlCommand(query, connection);
+            if (parameters != null)
+            {
+                command.Parameters.AddRange(parameters);
+            }
             command.ExecuteNonQuery();
         }
 
-        public SqlDataReader ExecuteReader(string query)
+        public SqlDataReader ExecuteReader(string query, SqlParameter[]? parameters = null)
         {
             SqlConnection connection = _dbConnectionManager.GetConnection();
             connection.Open();
 
             SqlCommand command = new SqlCommand(query, connection);
+            if (parameters != null)
+            {
+                command.Parameters.AddRange(parameters);
+            }
             return command.ExecuteReader(CommandBehavior.CloseConnection);
         }
 
-        public object ExecuteScalar(string query)
+        public object ExecuteScalar(string query, SqlParameter[]? parameters = null)
         {
             using SqlConnection connection = _dbConnectionManager.GetConnection();
             connection.Open();
 
             using SqlCommand command = new SqlCommand(query, connection);
+            if (parameters != null)
+            {
+                command.Parameters.AddRange(parameters);
+            }
             return command.ExecuteScalar();
         }
 
@@ -55,21 +68,29 @@ namespace AdoNetDemo
             return command.ExecuteReader(CommandBehavior.CloseConnection);
         }
 
-        public async Task<SqlDataReader> ExecuteReaderAsync(string query)
+        public async Task<SqlDataReader> ExecuteReaderAsync(string query, SqlParameter[]? parameters = null)
         {
             SqlConnection connection = _dbConnectionManager.GetConnection();
             await connection.OpenAsync();
 
             SqlCommand command = new SqlCommand(query, connection);
+            if (parameters != null)
+            {
+                command.Parameters.AddRange(parameters);
+            }
             return await command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
         }
 
-        public async Task ExecuteNonQueryAsync(string query)
+        public async Task ExecuteNonQueryAsync(string query, SqlParameter[]? parameters = null)
         {
             using SqlConnection connection = _dbConnectionManager.GetConnection();
             await connection.OpenAsync();
 
             using SqlCommand command = new SqlCommand(query, connection);
+            if (parameters != null)
+            {
+                command.Parameters.AddRange(parameters);
+            }
             await command.ExecuteNonQueryAsync();
         }
     }

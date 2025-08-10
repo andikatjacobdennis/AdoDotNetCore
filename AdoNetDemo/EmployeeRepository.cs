@@ -12,7 +12,7 @@ namespace AdoNetDemo
             _dbCommandExecutor = dbCommandExecutor;
         }
 
-        // Check if database exists
+        // Check if database exists using a parameterized query
         public bool DatabaseExists(string databaseName)
         {
             // Build connection string with the same server & credentials but database = master
@@ -21,24 +21,30 @@ namespace AdoNetDemo
                 InitialCatalog = "master"  // Override database to master
             };
 
+            string query = "SELECT database_id FROM sys.databases WHERE Name = @dbName";
+            SqlParameter[] parameters = {
+                new SqlParameter("@dbName", SqlDbType.NVarChar) { Value = databaseName }
+            };
+
+            // Use the ExecuteScalar method to securely check for database existence
             using SqlConnection connection = new SqlConnection(builder.ConnectionString);
             connection.Open();
-
-            string query = "SELECT database_id FROM sys.databases WHERE Name = @dbName";
             using SqlCommand command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@dbName", databaseName);
+            command.Parameters.AddRange(parameters);
 
             object result = command.ExecuteScalar();
-            bool isDbExist = result != null && result != DBNull.Value;
-
-            return isDbExist;
+            return result != null && result != DBNull.Value;
         }
 
-        // Create
+        // Create method now uses a parameterized query to prevent SQL injection
         public void CreateEmployee(string name, int age)
         {
-            string query = $"INSERT INTO Employees (Name, Age) VALUES ('{name}', {age})";
-            _dbCommandExecutor.ExecuteNonQuery(query);
+            string query = "INSERT INTO Employees (Name, Age) VALUES (@name, @age)";
+            SqlParameter[] parameters = {
+                new SqlParameter("@name", SqlDbType.NVarChar) { Value = name },
+                new SqlParameter("@age", SqlDbType.Int) { Value = age }
+            };
+            _dbCommandExecutor.ExecuteNonQuery(query, parameters);
         }
 
         // Read
@@ -53,20 +59,28 @@ namespace AdoNetDemo
             }
         }
 
-        // Update
+        // Update method uses a parameterized query to prevent SQL injection
         public void UpdateEmployee(int id, string name, int age)
         {
-            string query = $"UPDATE Employees SET Name = '{name}', Age = {age} WHERE Id = {id}";
-            _dbCommandExecutor.ExecuteNonQuery(query);
+            string query = "UPDATE Employees SET Name = @name, Age = @age WHERE Id = @id";
+            SqlParameter[] parameters = {
+                new SqlParameter("@id", SqlDbType.Int) { Value = id },
+                new SqlParameter("@name", SqlDbType.NVarChar) { Value = name },
+                new SqlParameter("@age", SqlDbType.Int) { Value = age }
+            };
+            _dbCommandExecutor.ExecuteNonQuery(query, parameters);
         }
 
-        // Delete
+        // Delete method uses a parameterized query to prevent SQL injection
         public void DeleteEmployee(int id)
         {
-            string query = $"DELETE FROM Employees WHERE Id = {id}";
-            _dbCommandExecutor.ExecuteNonQuery(query);
+            string query = "DELETE FROM Employees WHERE Id = @id";
+            SqlParameter[] parameters = {
+                new SqlParameter("@id", SqlDbType.Int) { Value = id }
+            };
+            _dbCommandExecutor.ExecuteNonQuery(query, parameters);
         }
-
+        
         public void GetEmployeesUsingStoredProcedure()
         {
             string procedureName = "sp_GetEmployees";

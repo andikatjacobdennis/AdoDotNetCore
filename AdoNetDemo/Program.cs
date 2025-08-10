@@ -4,6 +4,8 @@ namespace AdoNetDemo
     {
         static async Task Main()
         {
+            // Note: The serverName "." typically refers to the local SQL Server Express instance.
+            // Adjust this if your SQL Server instance has a different name.
             string serverName = ".";
             string databaseName = "AdoNetDemoDb";
             string connectionString = $"Data Source={serverName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
@@ -20,14 +22,17 @@ namespace AdoNetDemo
                 employeeRepository.GetEmployees();
 
                 Console.WriteLine("\n--- Creating a new employee ---");
+                // Using a parameterized query for a secure INSERT operation
                 employeeRepository.CreateEmployee("New Employee", 35);
                 employeeRepository.GetEmployees();
 
                 Console.WriteLine("\n--- Updating an employee (Id: 3) ---");
+                // Using a parameterized query for a secure UPDATE operation
                 employeeRepository.UpdateEmployee(3, "Updated Employee", 40);
                 employeeRepository.GetEmployees();
 
                 Console.WriteLine("\n--- Deleting an employee (Id: 4) ---");
+                // Using a parameterized query for a secure DELETE operation
                 employeeRepository.DeleteEmployee(4);
                 employeeRepository.GetEmployees();
 
@@ -42,7 +47,7 @@ namespace AdoNetDemo
             }
             else
             {
-                Console.WriteLine("Database does not exist.");
+                Console.WriteLine("Database does not exist. Please run the setup script first.");
             }
 
             Console.WriteLine("\n--- Program complete ---");
