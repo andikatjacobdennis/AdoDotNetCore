@@ -1,4 +1,4 @@
-# Ado Net Demo
+# Ado Dot Net Core
 
 ![.NET](https://img.shields.io/badge/.NET-9.0-blue)
 ![SQL Server](https://img.shields.io/badge/SQL_Server-2022-green)
