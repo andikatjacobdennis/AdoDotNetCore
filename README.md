@@ -118,6 +118,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ---
 
 *Made with ❤️ for developers exploring ADO.NET and .NET Core.*
-
-If you want, I can also help generate the LICENSE file or convert your tutorial into that separate `ADO.NET_Tutorial.md` file ready to include!
-```
