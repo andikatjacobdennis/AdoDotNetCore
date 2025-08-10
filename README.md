@@ -1,8 +1,9 @@
 # Ado Net Demo
 
 ![.NET](https://img.shields.io/badge/.NET-9.0-blue)
-![SQL Server](https://img.shields.io/badge/SQL_Server-2019-green)
+![SQL Server](https://img.shields.io/badge/SQL_Server-2022-green)
 ![License](https://img.shields.io/badge/license-MIT-green)
+[![.NET 9 Build](https://github.com/andikatjacobdennis/AdoNetDemo/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/andikatjacobdennis/AdoNetDemo/actions/workflows/dotnet-desktop.yml)
 
 A simple .NET Core console application demonstrating database operations using ADO.NET with SQL Server.
 
