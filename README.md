@@ -5,76 +5,140 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![.NET 9 Build](https://github.com/andikatjacobdennis/AdoNetDemo/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/andikatjacobdennis/AdoNetDemo/actions/workflows/dotnet-desktop.yml)
 
-A simple .NET Core console application demonstrating database operations using ADO.NET with SQL Server.
+A simple .NET console application demonstrating various database operations using **ADO.NET** with SQL Server. This project serves as a practical guide to the core functionalities and best practices of ADO.NET, including both connected and disconnected architectures.
 
-For a detailed step-by-step guide, please see the full tutorial:  
-[ADO.NET Tutorial](ADO.NET_Tutorial.md)
-
----
+-----
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)  
-- [Setup](#setup)  
-- [Build and Run](#build-and-run)  
-- [Project Structure](#project-structure)  
-- [Notes](#notes)  
-- [Contributing](#contributing)  
-- [License](#license)  
+  - [Prerequisites](https://www.google.com/search?q=%23prerequisites)
+  - [Setup](https://www.google.com/search?q=%23setup)
+  - [Build and Run](https://www.google.com/search?q=%23build-and-run)
+  - [Project Structure](https://www.google.com/search?q=%23project-structure)
+  - [Notes](https://www.google.com/search?q=%23notes)
+  - [Contributing](https://www.google.com/search?q=%23contributing)
+  - [License](https://www.google.com/search?q=%23license)
 
----
+-----
 
 ## Prerequisites
 
-- [.NET Core 9.0 SDK](https://dotnet.microsoft.com/en-us/download) or later installed  
-- SQL Server instance (2022 or later recommended)  
-- Basic knowledge of C# and SQL  
+  - [.NET 9.0 SDK](https://dotnet.microsoft.com/en-us/download) or later installed
+  - SQL Server instance (2022 or later recommended)
+  - Basic knowledge of C\# and SQL
+  - **For Microsoft Access connectivity:** You must install the **Microsoft Access Database Engine 2016 Redistributable**. Download the `accessdatabaseengine_X64.exe` installer from the official Microsoft website and install it. This provides the necessary OLE DB driver for `OleDbConnection`.
 
----
+-----
 
 ## Setup
 
-1. Create the database and table in SQL Server:
+1.  Create the database and tables in SQL Server using the provided script:
+
+<!-- end list -->
 
 ```sql
-IF DB_ID('AdoNetDemoDb') IS NULL
+-- Create Database if it doesn't exist
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'AdoNetTrainingDB')
 BEGIN
-    CREATE DATABASE AdoNetDemoDb;
+    CREATE DATABASE AdoNetTrainingDB;
+    PRINT 'Database AdoNetTrainingDB created.';
+END
+ELSE
+BEGIN
+    PRINT 'Database AdoNetTrainingDB already exists.';
 END
 GO
 
-USE AdoNetDemoDb;
+USE AdoNetTrainingDB;
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Employees')
+-- Create Table: YourTable
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='YourTable' AND xtype='U')
 BEGIN
-    CREATE TABLE Employees (
-        Id INT PRIMARY KEY IDENTITY(1,1),
-        Name NVARCHAR(100),
-        Age INT
+    CREATE TABLE YourTable (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Name NVARCHAR(100) NOT NULL
     );
-
-    INSERT INTO Employees (Name, Age) VALUES ('John Doe', 30);
-    INSERT INTO Employees (Name, Age) VALUES ('Jane Doe', 25);
+    PRINT 'Table YourTable created.';
 END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.procedures WHERE name = 'sp_GetEmployees')
+ELSE
 BEGIN
-    EXEC('CREATE PROCEDURE sp_GetEmployees AS BEGIN SELECT * FROM Employees; END');
+    PRINT 'Table YourTable already exists.';
+END
+GO
+
+-- Create Table: LargeTable
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='LargeTable' AND xtype='U')
+BEGIN
+    CREATE TABLE LargeTable (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        DataValue NVARCHAR(255) NOT NULL
+    );
+    PRINT 'Table LargeTable created.';
+END
+ELSE
+BEGIN
+    PRINT 'Table LargeTable already exists.';
+END
+GO
+
+-- Insert Sample Data into YourTable only if empty
+IF NOT EXISTS (SELECT 1 FROM YourTable)
+BEGIN
+    INSERT INTO YourTable (Name) VALUES
+    ('Alice'),
+    ('Bob'),
+    ('Charlie'),
+    ('David'),
+    ('Eva');
+    PRINT 'Sample data inserted into YourTable.';
+END
+ELSE
+BEGIN
+    PRINT 'YourTable already has data.';
+END
+GO
+
+-- Insert Bulk Data into LargeTable only if empty
+IF NOT EXISTS (SELECT 1 FROM LargeTable)
+BEGIN
+    DECLARE @i INT = 1;
+    WHILE @i <= 1000
+    BEGIN
+        INSERT INTO LargeTable (DataValue) VALUES ('Value ' + CAST(@i AS NVARCHAR(10)));
+        SET @i += 1;
+    END
+    PRINT 'Sample bulk data inserted into LargeTable.';
+END
+ELSE
+BEGIN
+    PRINT 'LargeTable already has data.';
+END
+GO
+
+-- Create Stored Procedure if it doesn't exist
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='MyStoredProc' AND xtype='P')
+BEGIN
+    EXEC('
+    CREATE PROCEDURE MyStoredProc
+        @Param1 NVARCHAR(100)
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+        INSERT INTO YourTable (Name) VALUES (@Param1);
+        SELECT ''Inserted '' + @Param1 AS ResultMessage;
+    END
+    ');
+    PRINT 'Stored procedure MyStoredProc created.';
+END
+ELSE
+BEGIN
+    PRINT 'Stored procedure MyStoredProc already exists.';
 END
 GO
 ```
 
-2. Update the connection string in `Program.cs`:
-
-```csharp
-string serverName = ".";
-string databaseName = "AdoNetDemoDb";
-string connectionString = $"Data Source={serverName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
-```
-
----
+-----
 
 ## Build and Run
 
@@ -85,94 +149,65 @@ dotnet build
 dotnet run
 ```
 
----
+-----
 
 ## Project Structure
 
-* `Program.cs` — Main program demonstrating usage
-* `DbConnectionManager.cs` — Manages database connections
-* `DbCommandExecutor.cs` — Executes SQL commands
-* `EmployeeRepository.cs` — CRUD operations and other queries for the Employees table
-* `ADO.NET_Tutorial.md` — Detailed tutorial with full code examples and best practices
+  * `Program.cs` — The main program that demonstrates ADO.NET concepts through a console menu.
+  * `AdoNetDemo.csproj` — The project file, which includes necessary NuGet package references.
+  * `SampleAccessDB.accdb` — (Optional) A sample Microsoft Access database used for demonstrating OLE DB connections.
+  * `people.xml` and `people.json` — (Optional) Files generated by the program to show data serialization.
 
----
-
-## Class Diagram
-
-This UML class diagram illustrates the relationships and dependencies between the main classes in the project.
-
-```mermaid
-classDiagram
-    class Program {
-        +Main()
-    }
-
-    class DbConnectionManager {
-        -string _connectionString
-        +DbConnectionManager(connectionString: string)
-        +GetConnection() SqlConnection
-    }
-
-    class DbCommandExecutor {
-        ~readonly DbConnectionManager _dbConnectionManager
-        +DbCommandExecutor(dbConnectionManager: DbConnectionManager)
-        +ExecuteNonQuery(query: string, parameters: SqlParameter[]?) void
-        +ExecuteReader(query: string, parameters: SqlParameter[]?) SqlDataReader
-        +ExecuteScalar(query: string, parameters: SqlParameter[]?) object
-        +ExecuteStoredProcedure(procedureName: string, parameters: SqlParameter[]?) SqlDataReader
-        +ExecuteReaderAsync(query: string, parameters: SqlParameter[]?) Task~SqlDataReader~
-        +ExecuteNonQueryAsync(query: string, parameters: SqlParameter[]?) Task
-    }
-
-    class EmployeeRepository {
-        -readonly DbCommandExecutor _dbCommandExecutor
-        +EmployeeRepository(dbCommandExecutor: DbCommandExecutor)
-        +DatabaseExists(databaseName: string) bool
-        +CreateEmployee(name: string, age: int) void
-        +GetEmployees() void
-        +UpdateEmployee(id: int, name: string, age: int) void
-        +DeleteEmployee(id: int) void
-        +GetEmployeesUsingStoredProcedure() void
-        +GetEmployeesDataSet() DataSet
-        +GetEmployeesUsingDataSet() void
-        +GetEmployeesAsync() Task
-    }
-
-    Program ..> DbConnectionManager : uses
-    Program ..> DbCommandExecutor : uses
-    Program ..> EmployeeRepository : uses
-
-    DbCommandExecutor o-- DbConnectionManager : manages
-    EmployeeRepository o-- DbCommandExecutor : executes
-```
-
----
+-----
 
 ## Notes
 
-* Always use parameterized queries or stored procedures in production to prevent SQL injection.
-* The provided examples use string interpolation for clarity; avoid this in real applications.
+### ADO.NET Concepts
 
----
+This project covers the foundational concepts of ADO.NET, a low-level, high-performance technology for data access in .NET that gives you direct control over database interactions.
+
+#### 1\. Connected vs. Disconnected Architecture
+
+The two primary approaches in ADO.NET are **connected** and **disconnected**.
+
+  * **Connected Architecture:** Maintains an open connection to the database while data is being read. This approach, using objects like `SqlConnection` and `SqlDataReader`, is fast and memory-efficient for read-only, forward-only access of large datasets.
+  * **Disconnected Architecture:** Fetches data into a local, in-memory **`DataSet`** and then closes the connection. The application can work with this offline data and later use a `SqlDataAdapter` to push changes back to the database. This is great for caching and working with multiple related tables.
+
+#### 2\. Key Classes
+
+  * **`SqlConnection`**: Manages the connection to a SQL Server database using a specified connection string.
+  * **`SqlCommand`**: Represents a SQL statement or stored procedure to be executed.
+  * **`SqlDataReader`**: An efficient, read-only, forward-only stream for reading rows from a database.
+  * **`SqlDataAdapter`**: Acts as a bridge between the `DataSet` and the database. It fills the `DataSet` with data and pushes changes back to the database.
+  * **`DataSet` and `DataTable`**: A `DataSet` is an in-memory representation of database data, acting like a lightweight database. It contains one or more `DataTable` objects, which represent individual tables.
+
+#### 3\. Security and Best Practices
+
+  * **Parameterized Commands**: The project demonstrates how to use **parameterized queries** to prevent **SQL injection** attacks. Instead of concatenating user input directly into a SQL string, you use placeholders (e.g., `@name`) to separate the command logic from the data.
+  * **Transactions**: The code shows how to use **transactions** (`SqlTransaction`) to group multiple operations into an atomic unit. This ensures that either all operations succeed (`Commit`) or all are undone (`Rollback`), preserving data integrity.
+  * **`SqlCommandBuilder`**: This utility can automatically generate the necessary `INSERT`, `UPDATE`, and `DELETE` commands for a `DataAdapter`, which simplifies development for disconnected updates.
+  * **`SqlBulkCopy`**: The fastest way to insert a large amount of data into a SQL Server table. It bypasses individual row insertions for a more efficient bulk operation.
+
+-----
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
+Contributions are welcome\! Please follow these steps:
 
-1. Fork the repository
-2. Create a new feature branch (`git checkout -b feature/YourFeature`)
-3. Commit your changes (`git commit -m "Add feature"`)
-4. Push to your branch (`git push origin feature/YourFeature`)
-5. Open a Pull Request for review
+1.  Fork the repository.
+2.  Create a new feature branch (`git checkout -b feature/YourFeature`).
+3.  Commit your changes (`git commit -m "Add feature"`).
+4.  Push to your branch (`git push origin feature/YourFeature`).
+5.  Open a Pull Request for review.
 
 Please ensure your code follows existing style conventions and includes tests where appropriate.
 
----
+-----
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
 
----
+-----
 
 *Made with ❤️ for developers exploring ADO.NET and .NET Core.*
