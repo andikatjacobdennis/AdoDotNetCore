@@ -571,13 +571,11 @@ namespace AdoNetDemo
             Console.WriteLine($"Inserted {rows} row(s).");
 
             Console.WriteLine("\n2. Reading data from 'YourAccessTable'.");
-            using (var cmd = new OleDbCommand("SELECT TOP 5 ID, Name, Age FROM YourAccessTable", conn))
-            using (var reader = cmd.ExecuteReader())
+            using var cmd = new OleDbCommand("SELECT TOP 5 ID, Name, Age FROM YourAccessTable", conn);
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
             {
-                while (reader.Read())
-                {
-                    Console.WriteLine($"ID: {reader[0]}, Name: {reader[1]}, Age: {reader[2]}");
-                }
+                Console.WriteLine($"ID: {reader[0]}, Name: {reader[1]}, Age: {reader[2]}");
             }
         }
 
