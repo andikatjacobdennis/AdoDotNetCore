@@ -1,35 +1,16 @@
 -- 1. Create Database if it doesn't exist
---IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'AdoNetTrainingDB')
---BEGIN
---    CREATE DATABASE AdoNetTrainingDB;
---    PRINT 'Database AdoNetTrainingDB created.';
---END
---ELSE
---BEGIN
---    PRINT 'Database AdoNetTrainingDB already exists.';
---END
---GO
-
---USE AdoNetTrainingDB;
---GO
-
--- 1. Create Database if it doesn't exist
-DECLARE @DBName NVARCHAR(128) = 'AdoNetTrainingDB';
-
-IF DATABASEPROPERTYEX(@DBName, 'Version') IS NULL
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'AdoNetTrainingDB')
 BEGIN
-    BEGIN TRY
-        EXEC('CREATE DATABASE [' + @DBName + ']');
-        PRINT 'Database ' + @DBName + ' created.';
-    END TRY
-    BEGIN CATCH
-        PRINT 'Error creating database ' + @DBName + ': ' + ERROR_MESSAGE();
-    END CATCH
+    CREATE DATABASE AdoNetTrainingDB;
+    PRINT 'Database AdoNetTrainingDB created.';
 END
 ELSE
 BEGIN
-    PRINT 'Database ' + @DBName + ' already exists.';
+    PRINT 'Database AdoNetTrainingDB already exists.';
 END
+GO
+
+USE AdoNetTrainingDB;
 GO
 
 -- 2. Create Table: YourTable
@@ -100,14 +81,15 @@ GO
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='MyStoredProc' AND xtype='P')
 BEGIN
     EXEC('
-    CREATE PROCEDURE MyStoredProc
-        @Param1 NVARCHAR(100)
-    AS
-    BEGIN
-        SET NOCOUNT ON;
-        INSERT INTO YourTable (Name) VALUES (@Param1);
-        SELECT ''Inserted '' + @Param1 AS ResultMessage;
-    END
+        CREATE PROCEDURE MyStoredProc
+            @Param1 NVARCHAR(100),
+            @ResultMessage NVARCHAR(200) OUTPUT
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            INSERT INTO YourTable (Name) VALUES (@Param1);
+            SET @ResultMessage = ''Inserted '' + @Param1;
+        END
     ');
     PRINT 'Stored procedure MyStoredProc created.';
 END
@@ -116,3 +98,10 @@ BEGIN
     PRINT 'Stored procedure MyStoredProc already exists.';
 END
 GO
+
+--DECLARE @Param1 NVARCHAR(100) = '555';
+--DECLARE @Message NVARCHAR(200);
+
+--EXEC [dbo].[MyStoredProc] @Param1, @ResultMessage = @Message OUTPUT;
+
+--PRINT @Message;

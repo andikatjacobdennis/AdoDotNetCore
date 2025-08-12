@@ -135,38 +135,27 @@ namespace AdoNetDemo
             Console.WriteLine("--- Disconnected Architecture ---");
             Console.WriteLine("Fetching data into a DataSet which operates offline...");
 
-            try
+            using SqlConnection conn = new SqlConnection(connectionString);
+            using SqlDataAdapter adapter = new SqlDataAdapter("SELECT TOP 5 Id, Name FROM YourTable", conn);
+            DataSet dataSet = new DataSet();
+
+            int rowsFetched = adapter.Fill(dataSet, "YourTable");
+
+            if (rowsFetched > 0)
             {
-                using SqlConnection conn = new SqlConnection(connectionString);
-                using SqlDataAdapter adapter = new SqlDataAdapter("SELECT TOP 5 Id, Name FROM YourTable", conn);
-                DataSet dataSet = new DataSet();
-
-                int rowsFetched = adapter.Fill(dataSet, "YourTable");
-
-                if (rowsFetched > 0)
+                DataTable? table = dataSet.Tables["YourTable"];
+                if (table != null && table.Rows.Count > 0)
                 {
-                    DataTable? table = dataSet.Tables["YourTable"];
-                    if (table != null && table.Rows.Count > 0)
+                    Console.WriteLine($"Data loaded into DataSet ({table.Rows.Count} rows).");
+                    foreach (DataRow row in table.Rows)
                     {
-                        Console.WriteLine($"Data loaded into DataSet ({table.Rows.Count} rows).");
-                        foreach (DataRow row in table.Rows)
-                        {
-                            Console.WriteLine($"ID: {row["Id"]}, Name: {row["Name"]}");
-                        }
+                        Console.WriteLine($"ID: {row["Id"]}, Name: {row["Name"]}");
                     }
                 }
-                else
-                {
-                    Console.WriteLine("? No data returned from 'YourTable'.");
-                }
             }
-            catch (SqlException ex)
+            else
             {
-                Console.WriteLine($"[SQL Error] {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Unexpected Error] {ex.Message}");
+                Console.WriteLine("? No data returned from 'YourTable'.");
             }
         }
 
@@ -414,21 +403,28 @@ namespace AdoNetDemo
                 using SqlConnection conn = new SqlConnection(connectionString);
                 conn.Open();
 
-                // NOTE: Ensure this stored procedure exists in your database:
-                // CREATE PROCEDURE MyStoredProc @Param1 NVARCHAR(50) AS SELECT @Param1;
                 using SqlCommand cmd = new SqlCommand("MyStoredProc", conn)
                 {
                     CommandType = CommandType.StoredProcedure
                 };
 
-                cmd.Parameters.Add("@Param1", SqlDbType.NVarChar, 50).Value = "This is a test parameter.";
+                // Input parameter
+                cmd.Parameters.Add("@Param1", SqlDbType.NVarChar, 100).Value = "This is a test parameter.";
+
+                // Output parameter
+                SqlParameter outputParam = new SqlParameter("@ResultMessage", SqlDbType.NVarChar, 200)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(outputParam);
 
                 Console.WriteLine("Executing stored procedure...");
-                object? result = cmd.ExecuteScalar();
+                cmd.ExecuteNonQuery();
 
-                Console.WriteLine(result != null
-                    ? $"Stored procedure returned: '{result}'"
-                    : "Stored procedure returned no value.");
+                // Get the output parameter value after execution
+                string resultMessage = outputParam.Value as string ?? "<null>";
+
+                Console.WriteLine($"Stored procedure returned: '{resultMessage}'");
             }
             catch (SqlException ex)
             {
@@ -439,6 +435,7 @@ namespace AdoNetDemo
                 Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
         }
+
 
         static void SqlCommandBuilderDemo()
         {
