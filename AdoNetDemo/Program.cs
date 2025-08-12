@@ -106,11 +106,21 @@ namespace AdoNetDemo
         static void EnvironmentSetup()
         {
             Console.WriteLine("Steps:");
-            Console.WriteLine("1. Install Visual Studio or VS Code.");
-            Console.WriteLine("2. Install .NET 9 SDK.");
-            Console.WriteLine("3. Create Console Project: dotnet new console");
-            Console.WriteLine("4. Install Microsoft.Data.SqlClient (install 6.0.2) NuGet package.");
-            Console.WriteLine("4. Install System.Data.OleDb (install 9.0.8) NuGet package.");
+            Console.WriteLine("1. Install Visual Studio 2022 or Visual Studio Code:");
+            Console.WriteLine("   Visual Studio 2022: https://visualstudio.microsoft.com/vs/");
+            Console.WriteLine("   Visual Studio Code: https://code.visualstudio.com/");
+            Console.WriteLine();
+            Console.WriteLine("2. Install .NET 9 SDK:");
+            Console.WriteLine("   https://dotnet.microsoft.com/en-us/download/dotnet/9.0");
+            Console.WriteLine();
+            Console.WriteLine("3. Create Console Project:");
+            Console.WriteLine("   dotnet new console -n AdoNetDemo -f net9.0");
+            Console.WriteLine();
+            Console.WriteLine("4. Install Microsoft.Data.SqlClient NuGet package (version 6.0.2):");
+            Console.WriteLine("   https://www.nuget.org/packages/Microsoft.Data.SqlClient/6.0.2");
+            Console.WriteLine();
+            Console.WriteLine("5. Install System.Data.OleDb NuGet package (version 9.0.8):");
+            Console.WriteLine("   https://www.nuget.org/packages/System.Data.OleDb/9.0.8");
         }
 
         static void DisconnectedArchitecture()
