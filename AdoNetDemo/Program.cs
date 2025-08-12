@@ -133,26 +133,40 @@ namespace AdoNetDemo
         static void DisconnectedArchitecture()
         {
             Console.WriteLine("--- Disconnected Architecture ---");
-            Console.WriteLine("Fetching data into a `DataSet` which operates offline.");
+            Console.WriteLine("Fetching data into a DataSet which operates offline...");
 
-            using var conn = new SqlConnection(connectionString);
-            using var adapter = new SqlDataAdapter("SELECT TOP 5 Id, Name FROM YourTable", conn);
-            var dataSet = new DataSet();
-
-            adapter.Fill(dataSet, "YourTable");
-
-            if (dataSet.Tables.Contains("YourTable") && dataSet.Tables["YourTable"]?.Rows.Count > 0)
+            try
             {
-                var table = dataSet.Tables["YourTable"];
-                Console.WriteLine("Data loaded into DataSet (disconnected).");
-                foreach (DataRow row in table.Rows)
+                using var conn = new SqlConnection(connectionString);
+                using var adapter = new SqlDataAdapter("SELECT TOP 5 Id, Name FROM YourTable", conn);
+                var dataSet = new DataSet();
+
+                int rowsFetched = adapter.Fill(dataSet, "YourTable");
+
+                if (rowsFetched > 0)
                 {
-                    Console.WriteLine($"{row["Id"]} - {row["Name"]}");
+                    var table = dataSet.Tables["YourTable"];
+                    if (table != null && table.Rows.Count > 0)
+                    {
+                        Console.WriteLine($"Data loaded into DataSet ({table.Rows.Count} rows).");
+                        foreach (DataRow row in table.Rows)
+                        {
+                            Console.WriteLine($"ID: {row["Id"]}, Name: {row["Name"]}");
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("? No data returned from 'YourTable'.");
                 }
             }
-            else
+            catch (SqlException ex)
             {
-                Console.WriteLine("Table 'YourTable' not found or contains no data.");
+                Console.WriteLine($"[SQL Error] {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
         }
 
@@ -179,41 +193,60 @@ namespace AdoNetDemo
 
         static void SerializingDataSet()
         {
-            var ds = new DataSet("PeopleDS");
-            var dt = new DataTable("People");
-            dt.Columns.Add("Id", typeof(int));
-            dt.Columns.Add("Name", typeof(string));
-            dt.Rows.Add(1, "Alice");
-            dt.Rows.Add(2, "Bob");
-            ds.Tables.Add(dt);
+            Console.WriteLine("--- Serializing DataSet ---");
 
-            // Write full DataSet to XML
-            string xmlFilePath = Path.GetFullPath("people.xml");
-            ds.WriteXml(xmlFilePath, XmlWriteMode.WriteSchema);
-            Console.WriteLine($"Serialized to XML. File created at: {xmlFilePath}");
-
-            // Flatten DataTable for JSON serialization to avoid complex object graphs
-            var peopleList = new List<object>();
-            if (ds.Tables.Contains("People"))
+            try
             {
+                // Build the DataSet
+                var ds = new DataSet("PeopleDS");
+                var dt = new DataTable("People");
+                dt.Columns.Add("Id", typeof(int));
+                dt.Columns.Add("Name", typeof(string));
+                dt.Rows.Add(1, "Alice");
+                dt.Rows.Add(2, "Bob");
+                ds.Tables.Add(dt);
+
+                // Write full DataSet to XML
+                string xmlFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "people.xml");
+                ds.WriteXml(xmlFilePath, XmlWriteMode.WriteSchema);
+                Console.WriteLine($"Serialized to XML. File created at: {xmlFilePath}");
+
+                // Prepare data for JSON serialization
+                var peopleList = new List<object>();
                 var table = ds.Tables["People"];
-                foreach (DataRow row in table.Rows)
+                if (table != null && table.Rows.Count > 0)
                 {
-                    peopleList.Add(new
+                    foreach (DataRow row in table.Rows)
                     {
-                        Id = Convert.ToInt32(row["Id"]),
-                        Name = Convert.ToString(row["Name"])
-                    });
+                        peopleList.Add(new
+                        {
+                            Id = row["Id"] != DBNull.Value ? Convert.ToInt32(row["Id"]) : 0,
+                            Name = row["Name"]?.ToString() ?? string.Empty
+                        });
+                    }
                 }
+                else
+                {
+                    Console.WriteLine("No data found in 'People' table for JSON serialization.");
+                }
+
+                // Serialize to JSON
+                string json = JsonSerializer.Serialize(peopleList, _jsonOptions);
+                string jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "people.json");
+                File.WriteAllText(jsonFilePath, json);
+
+                Console.WriteLine($"Serialized to JSON. File created at: {jsonFilePath}");
+                Console.WriteLine("\nJSON Output:");
+                Console.WriteLine(json);
             }
-
-            string json = JsonSerializer.Serialize(peopleList, _jsonOptions);
-            string jsonFilePath = Path.GetFullPath("people.json");
-            File.WriteAllText(jsonFilePath, json);
-
-            Console.WriteLine($"Serialized to JSON. File created at: {jsonFilePath}");
-            Console.WriteLine("\nJSON Output:");
-            Console.WriteLine(json);
+            catch (IOException ioEx)
+            {
+                Console.WriteLine($"[File Error] {ioEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
+            }
         }
 
         static void ConnectedArchitecture()
@@ -255,41 +288,53 @@ namespace AdoNetDemo
         static void CrudOperations()
         {
             Console.WriteLine("--- CRUD Operations ---");
-            using var conn = new SqlConnection(connectionString);
-            conn.Open();
 
-            // CREATE (parameterized)
-            Console.WriteLine("\n1. Inserting a new record using a parameterized command.");
-            using (var insertCmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn))
+            try
             {
-                insertCmd.Parameters.AddWithValue("@name", "SecureName");
-                int rowsInserted = insertCmd.ExecuteNonQuery();
-                Console.WriteLine($"Inserted {rowsInserted} record(s).");
-            }
+                using var conn = new SqlConnection(connectionString);
+                conn.Open();
 
-            // READ
-            Console.WriteLine("\n2. Reading the last inserted record.");
-            using (var selectCmd = new SqlCommand("SELECT TOP 1 Id, Name FROM YourTable ORDER BY Id DESC", conn))
-            using (var reader = selectCmd.ExecuteReader())
-            {
-                if (reader.Read())
+                // CREATE (parameterized)
+                Console.WriteLine("\n1. Inserting a new record using a parameterized command.");
+                using (var insertCmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn))
                 {
-                    Console.WriteLine($"Last Inserted Record: Id: {reader["Id"]}, Name: {reader["Name"]}");
+                    insertCmd.Parameters.Add("@name", SqlDbType.NVarChar, 100).Value = "SecureName";
+                    int rowsInserted = insertCmd.ExecuteNonQuery();
+                    Console.WriteLine($"Inserted {rowsInserted} record(s).");
                 }
-                else
-                {
-                    Console.WriteLine("No records found.");
-                }
-            }
 
-            // UPDATE (parameterized)
-            Console.WriteLine("\n3. Updating a record.");
-            string updatedName = "UpdatedName_" + DateTime.Now.Ticks;
-            using (var updateCmd = new SqlCommand("UPDATE YourTable SET Name = @newName WHERE Id = (SELECT TOP 1 Id FROM YourTable ORDER BY Id DESC)", conn))
-            {
-                updateCmd.Parameters.AddWithValue("@newName", updatedName);
+                // READ
+                Console.WriteLine("\n2. Reading the last inserted record.");
+                using (var selectCmd = new SqlCommand("SELECT TOP 1 Id, Name FROM YourTable ORDER BY Id DESC", conn))
+                using (var reader = selectCmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        Console.WriteLine($"Last Inserted Record ? Id: {reader["Id"]}, Name: {reader["Name"]}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("No records found.");
+                    }
+                }
+
+                // UPDATE (parameterized)
+                Console.WriteLine("\n3. Updating the last inserted record.");
+                string updatedName = $"UpdatedName_{DateTime.Now:yyyyMMdd_HHmmssfff}";
+                using var updateCmd = new SqlCommand("UPDATE YourTable SET Name = @newName WHERE Id = (SELECT TOP 1 Id FROM YourTable ORDER BY Id DESC)", conn);
+                updateCmd.Parameters.Add("@newName", SqlDbType.NVarChar, 100).Value = updatedName;
                 int rowsUpdated = updateCmd.ExecuteNonQuery();
-                Console.WriteLine($"Updated {rowsUpdated} record(s) to '{updatedName}'.");
+                Console.WriteLine(rowsUpdated > 0
+                    ? $"Updated {rowsUpdated} record(s) to '{updatedName}'."
+                    : "No records updated.");
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"[SQL Error] {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
         }
 
@@ -329,72 +374,119 @@ namespace AdoNetDemo
         static void ParameterizedCommands()
         {
             Console.WriteLine("--- Parameterized Commands ---");
-            Console.WriteLine("The **recommended** way to pass values to queries safely.");
-            using var conn = new SqlConnection(connectionString);
-            conn.Open();
+            Console.WriteLine("The recommended way to pass values to queries safely.");
 
-            // Demonstrating a safe parameterized query
-            using var cmd = new SqlCommand("SELECT Id, Name FROM YourTable WHERE Id = @id", conn);
-            cmd.Parameters.AddWithValue("@id", 1); // User input would be passed here
-
-            using var reader = cmd.ExecuteReader();
-            if (reader.Read())
+            try
             {
-                Console.WriteLine($"Found record for Id 1: {reader["Name"]}");
+                using var conn = new SqlConnection(connectionString);
+                conn.Open();
+
+                // Demonstrating a safe parameterized query
+                using var cmd = new SqlCommand("SELECT Id, Name FROM YourTable WHERE Id = @id", conn);
+                cmd.Parameters.Add("@id", SqlDbType.Int).Value = 1; // Example: replace with user input
+
+                using var reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    Console.WriteLine($"Found record for Id 1: {reader["Name"]}");
+                }
+                else
+                {
+                    Console.WriteLine("No record found with Id 1.");
+                }
             }
-            else
+            catch (SqlException ex)
             {
-                Console.WriteLine("No record found with Id 1.");
+                Console.WriteLine($"[SQL Error] {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
         }
 
         static void ExecutingProcedures()
         {
             Console.WriteLine("--- Executing Stored Procedures ---");
-            using var conn = new SqlConnection(connectionString);
-            conn.Open();
 
-            // You must create this stored procedure in your database for this to work
-            // E.g., `CREATE PROCEDURE MyStoredProc @Param1 NVARCHAR(50) AS SELECT @Param1;`
-            using var cmd = new SqlCommand("MyStoredProc", conn)
+            try
             {
-                CommandType = CommandType.StoredProcedure
-            };
-            cmd.Parameters.AddWithValue("@Param1", "This is a test parameter.");
+                using var conn = new SqlConnection(connectionString);
+                conn.Open();
 
-            Console.WriteLine("Executing stored procedure...");
-            object result = cmd.ExecuteScalar();
-            Console.WriteLine($"Stored procedure returned: '{result}'");
+                // NOTE: Ensure this stored procedure exists in your database:
+                // CREATE PROCEDURE MyStoredProc @Param1 NVARCHAR(50) AS SELECT @Param1;
+                using var cmd = new SqlCommand("MyStoredProc", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.Add("@Param1", SqlDbType.NVarChar, 50).Value = "This is a test parameter.";
+
+                Console.WriteLine("Executing stored procedure...");
+                object? result = cmd.ExecuteScalar();
+
+                Console.WriteLine(result != null
+                    ? $"Stored procedure returned: '{result}'"
+                    : "Stored procedure returned no value.");
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"[SQL Error] {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
+            }
         }
 
         static void SqlCommandBuilderDemo()
         {
             Console.WriteLine("--- SqlCommandBuilder Demo ---");
-            Console.WriteLine("Automatically generates `INSERT`, `UPDATE`, and `DELETE` commands for a `DataAdapter`.");
+            Console.WriteLine("Automatically generates INSERT, UPDATE, and DELETE commands for a DataAdapter.");
 
-            using var conn = new SqlConnection(connectionString);
-            using var adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
-            using var builder = new SqlCommandBuilder(adapter);
-
-            Console.WriteLine("\n**Auto-generated UPDATE Command:**");
-            Console.WriteLine(builder.GetUpdateCommand().CommandText);
-
-            var ds = new DataSet();
-            adapter.Fill(ds, "YourTable");
-
-            if (ds.Tables.Contains("YourTable") && ds.Tables["YourTable"]?.Rows.Count > 0)
+            try
             {
-                var table = ds.Tables["YourTable"];
-                Console.WriteLine("\nModifying the first row in memory...");
-                table.Rows[0]["Name"] = "UpdatedName_" + DateTime.Now.Ticks;
+                using var conn = new SqlConnection(connectionString);
+                using var adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
+                using var builder = new SqlCommandBuilder(adapter);
 
-                Console.WriteLine("Pushing changes back to the database using `adapter.Update()`...");
-                int rowsUpdated = adapter.Update(ds, "YourTable");
-                Console.WriteLine($"Updated {rowsUpdated} row(s) in the database.");
+                // Show the auto-generated UPDATE command
+                var updateCommand = builder.GetUpdateCommand();
+                Console.WriteLine("\nAuto-generated UPDATE Command:");
+                Console.WriteLine(updateCommand?.CommandText ?? "? No UPDATE command generated.");
+
+                var ds = new DataSet();
+                int rowsFetched = adapter.Fill(ds, "YourTable");
+
+                if (rowsFetched > 0)
+                {
+                    var table = ds.Tables["YourTable"];
+                    if (table != null && table.Rows.Count > 0)
+                    {
+                        Console.WriteLine($"\nFetched {table.Rows.Count} row(s). Modifying the first row in memory...");
+                        table.Rows[0]["Name"] = $"UpdatedName_{DateTime.Now:yyyyMMdd_HHmmssfff}";
+
+                        Console.WriteLine("Pushing changes back to the database using adapter.Update()...");
+                        int rowsUpdated = adapter.Update(ds, "YourTable");
+
+                        Console.WriteLine(rowsUpdated > 0
+                            ? $"Successfully updated {rowsUpdated} row(s) in the database."
+                            : "No rows were updated.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No data found. Ensure 'YourTable' exists and has rows.");
+                }
             }
-            else
+            catch (SqlException ex)
             {
-                Console.WriteLine("\nNo data found to update. Ensure 'YourTable' exists and has data.");
+                Console.WriteLine($"[SQL Error] {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
         }
 
@@ -429,18 +521,20 @@ namespace AdoNetDemo
 
             using var conn = new SqlConnection(connectionString);
             conn.Open();
+
             using var transaction = conn.BeginTransaction();
 
             try
             {
                 Console.WriteLine("Attempting to insert a record within a transaction...");
+
                 using (var cmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn, transaction))
                 {
-                    cmd.Parameters.AddWithValue("@name", "TransactionTest");
+                    cmd.Parameters.Add("@name", SqlDbType.NVarChar, 100).Value = "TransactionTest";
                     cmd.ExecuteNonQuery();
                 }
 
-                // Intentionally cause an error to demonstrate rollback
+                // Example: Uncomment to force an error and trigger rollback
                 // using (var cmd2 = new SqlCommand("INSERT INTO NonExistentTable (Name) VALUES ('fail')", conn, transaction))
                 // {
                 //     cmd2.ExecuteNonQuery();
@@ -449,10 +543,15 @@ namespace AdoNetDemo
                 transaction.Commit();
                 Console.WriteLine("Transaction committed successfully. Data saved.");
             }
+            catch (SqlException ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine($"[SQL Error] Transaction rolled back: {ex.Message}");
+            }
             catch (Exception ex)
             {
                 transaction.Rollback();
-                Console.WriteLine($"Transaction rolled back due to an error: {ex.Message}");
+                Console.WriteLine($"[Unexpected Error] Transaction rolled back: {ex.Message}");
             }
         }
 
@@ -463,7 +562,15 @@ namespace AdoNetDemo
             using var conn = new OleDbConnection(accessConnectionString);
             conn.Open();
 
-            Console.WriteLine("\n1. Reading data from 'YourAccessTable'.");
+            Console.WriteLine("\n1. Inserting a new record using parameterized command.");
+            using var insertCmd = new OleDbCommand("INSERT INTO YourAccessTable (Name, Age) VALUES (?, ?)", conn);
+            // Note: OleDb uses '?' for parameters and they are position-based.
+            insertCmd.Parameters.Add("?", OleDbType.VarWChar).Value = "New Access Record";
+            insertCmd.Parameters.Add("?", OleDbType.Integer).Value = 30;
+            int rows = insertCmd.ExecuteNonQuery();
+            Console.WriteLine($"Inserted {rows} row(s).");
+
+            Console.WriteLine("\n2. Reading data from 'YourAccessTable'.");
             using (var cmd = new OleDbCommand("SELECT TOP 5 ID, Name, Age FROM YourAccessTable", conn))
             using (var reader = cmd.ExecuteReader())
             {
@@ -472,79 +579,115 @@ namespace AdoNetDemo
                     Console.WriteLine($"ID: {reader[0]}, Name: {reader[1]}, Age: {reader[2]}");
                 }
             }
-
-            Console.WriteLine("\n2. Inserting a new record using parameterized command.");
-            using (var insertCmd = new OleDbCommand("INSERT INTO YourAccessTable (Name, Age) VALUES (?, ?)", conn))
-            {
-                // Note: OleDb uses '?' for parameters and they are position-based.
-                insertCmd.Parameters.Add("?", OleDbType.VarWChar).Value = "New Access Record";
-                insertCmd.Parameters.Add("?", OleDbType.Integer).Value = 30;
-                int rows = insertCmd.ExecuteNonQuery();
-                Console.WriteLine($"Inserted {rows} row(s).");
-            }
         }
 
         static void XmlDataReadWrite()
         {
             Console.WriteLine("--- XML Data Read/Write ---");
-            var ds = new DataSet("Products");
-            var dt = new DataTable("Product");
-            dt.Columns.Add("Id", typeof(int));
-            dt.Columns.Add("Name", typeof(string));
-            dt.Columns.Add("Price", typeof(decimal));
 
-            dt.Rows.Add(1, "Laptop", 1200.50m);
-            dt.Rows.Add(2, "Mouse", 15.99m);
-
-            ds.Tables.Add(dt);
-
-            string xmlFilePath = Path.GetFullPath("products.xml");
-            ds.WriteXml(xmlFilePath);
-            Console.WriteLine($"XML file 'products.xml' created at: {xmlFilePath}");
-
-            var ds2 = new DataSet();
-            ds2.ReadXml(xmlFilePath);
-
-            Console.WriteLine("\nData successfully read back from XML:");
-            if (ds2.Tables.Contains("Product"))
+            try
             {
-                var table = ds2.Tables["Product"];
-                foreach (DataRow row in table.Rows)
+                // Create dataset and table
+                var ds = new DataSet("Products");
+                var dt = new DataTable("Product");
+                dt.Columns.Add("Id", typeof(int));
+                dt.Columns.Add("Name", typeof(string));
+                dt.Columns.Add("Price", typeof(decimal));
+
+                // Sample data
+                dt.Rows.Add(1, "Laptop", 1200.50m);
+                dt.Rows.Add(2, "Mouse", 15.99m);
+                ds.Tables.Add(dt);
+
+                // Save XML file
+                string xmlFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "products.xml");
+
+                if (File.Exists(xmlFilePath))
                 {
-                    Console.WriteLine($"{row["Id"]} - {row["Name"]} - {row["Price"]}");
+                    Console.WriteLine($"Overwriting existing file: {xmlFilePath}");
+                }
+
+                ds.WriteXml(xmlFilePath, XmlWriteMode.WriteSchema);
+                Console.WriteLine($"XML file created at: {xmlFilePath}");
+
+                // Read XML file into new DataSet
+                var ds2 = new DataSet();
+                ds2.ReadXml(xmlFilePath);
+
+                Console.WriteLine("\nData read back from XML:");
+
+                var table = ds2.Tables["Product"]; // compiler knows this may be null
+                if (table?.Rows.Count > 0)
+                {
+                    foreach (DataRow row in table.Rows)
+                    {
+                        Console.WriteLine($"ID: {row["Id"]}, Name: {row["Name"]}, Price: {row["Price"]}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No 'Product' table found or table is empty.");
                 }
             }
-            else
+            catch (IOException ioEx)
             {
-                Console.WriteLine("Table 'Product' not found in XML.");
+                Console.WriteLine($"[File Error] {ioEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
         }
 
         static void DisconnectedUpdateBackToSql()
         {
             Console.WriteLine("--- Disconnected Update Back to SQL Server ---");
-            using var conn = new SqlConnection(connectionString);
-            using var adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
-            using var builder = new SqlCommandBuilder(adapter);
 
-            var ds = new DataSet();
-            adapter.Fill(ds, "YourTable");
-
-            if (ds.Tables.Contains("YourTable"))
+            try
             {
-                var table = ds.Tables["YourTable"];
-                Console.WriteLine("Data loaded into DataSet. Now adding a new row in memory.");
-                var newRow = table.NewRow();
-                newRow["Name"] = "NewDisconnectedName_" + DateTime.Now.Ticks;
-                table.Rows.Add(newRow);
+                using var conn = new SqlConnection(connectionString);
+                using var adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
+                using var builder = new SqlCommandBuilder(adapter);
 
-                Console.WriteLine("Pushing the new row from the disconnected DataSet back to SQL Server...");
-                int rowsUpdated = adapter.Update(ds, "YourTable");
-                Console.WriteLine($"{rowsUpdated} new row(s) updated back to SQL Server.");
+                var ds = new DataSet();
+                int rowsFetched = adapter.Fill(ds, "YourTable");
+
+                if (rowsFetched > 0)
+                {
+                    var table = ds.Tables["YourTable"];
+                    if (table != null)
+                    {
+                        Console.WriteLine($"Data loaded into DataSet ({table.Rows.Count} existing rows).");
+                        Console.WriteLine("Adding a new row in memory...");
+
+                        var newRow = table.NewRow();
+                        newRow["Name"] = $"NewDisconnectedName_{DateTime.Now:yyyyMMdd_HHmmssfff}";
+                        table.Rows.Add(newRow);
+
+                        Console.WriteLine("Updating the SQL Server table from disconnected DataSet...");
+                        int rowsUpdated = adapter.Update(ds, "YourTable");
+
+                        Console.WriteLine(rowsUpdated > 0
+                            ? $"{rowsUpdated} new row(s) successfully updated back to SQL Server."
+                            : "No rows were updated.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("'YourTable' exists in DB but could not be loaded into DataSet.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No rows fetched from 'YourTable'. Disconnected update not performed.");
+                }
             }
-            else
+            catch (SqlException ex)
             {
-                Console.WriteLine("Table 'YourTable' not found. Cannot perform disconnected update.");
+                Console.WriteLine($"[SQL Error] {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
         }
     }
