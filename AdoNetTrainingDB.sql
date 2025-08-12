@@ -1,16 +1,35 @@
 -- 1. Create Database if it doesn't exist
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'AdoNetTrainingDB')
+--IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'AdoNetTrainingDB')
+--BEGIN
+--    CREATE DATABASE AdoNetTrainingDB;
+--    PRINT 'Database AdoNetTrainingDB created.';
+--END
+--ELSE
+--BEGIN
+--    PRINT 'Database AdoNetTrainingDB already exists.';
+--END
+--GO
+
+--USE AdoNetTrainingDB;
+--GO
+
+-- 1. Create Database if it doesn't exist
+DECLARE @DBName NVARCHAR(128) = 'AdoNetTrainingDB';
+
+IF DATABASEPROPERTYEX(@DBName, 'Version') IS NULL
 BEGIN
-    CREATE DATABASE AdoNetTrainingDB;
-    PRINT 'Database AdoNetTrainingDB created.';
+    BEGIN TRY
+        EXEC('CREATE DATABASE [' + @DBName + ']');
+        PRINT 'Database ' + @DBName + ' created.';
+    END TRY
+    BEGIN CATCH
+        PRINT 'Error creating database ' + @DBName + ': ' + ERROR_MESSAGE();
+    END CATCH
 END
 ELSE
 BEGIN
-    PRINT 'Database AdoNetTrainingDB already exists.';
+    PRINT 'Database ' + @DBName + ' already exists.';
 END
-GO
-
-USE AdoNetTrainingDB;
 GO
 
 -- 2. Create Table: YourTable

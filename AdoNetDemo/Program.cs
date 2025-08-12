@@ -39,11 +39,11 @@ namespace AdoNetDemo
                 Console.WriteLine("8. Executing Commands");
                 Console.WriteLine("9. CRUD Operations");
                 Console.WriteLine("10. Reading Bulk Data");
-                Console.WriteLine("11. SQL Injection Example");
-                Console.WriteLine("12. Parameterized Commands (Recommended)");
-                Console.WriteLine("13. Executing Stored Procedures");
-                Console.WriteLine("14. SQL Command Builder");
-                Console.WriteLine("15. SQL Bulk Copy");
+                Console.WriteLine("11. SQL Bulk Copy");
+                Console.WriteLine("12. SQL Injection Example");
+                Console.WriteLine("13. Parameterized Commands (Recommended)");
+                Console.WriteLine("14. Executing Stored Procedures");
+                Console.WriteLine("15. SQL Command Builder");
                 Console.WriteLine("16. Transactions");
                 Console.WriteLine("17. Connect to MS Access Database");
                 Console.WriteLine("18. XML Data Read/Write");
@@ -68,11 +68,11 @@ namespace AdoNetDemo
                         case "8": ExecutingCommands(); break;
                         case "9": CrudOperations(); break;
                         case "10": ReadingBulkData(); break;
-                        case "11": SqlInjectionExample(); break;
-                        case "12": ParameterizedCommands(); break;
-                        case "13": ExecutingProcedures(); break;
-                        case "14": SqlCommandBuilderDemo(); break;
-                        case "15": SqlBulkCopyDemo(); break;
+                        case "11": SqlBulkCopyDemo(); break;
+                        case "12": SqlInjectionExample(); break;
+                        case "13": ParameterizedCommands(); break;
+                        case "14": ExecutingProcedures(); break;
+                        case "15": SqlCommandBuilderDemo(); break;
                         case "16": TransactionsDemo(); break;
                         case "17":
                             if (OperatingSystem.IsWindows())
@@ -106,7 +106,7 @@ namespace AdoNetDemo
 
         static void Introduction()
         {
-            Console.WriteLine("ADO.NET is a set of classes for accessing data sources from .NET.");
+            Console.WriteLine("ADO.NET provides access to data sources such as SQL Server and XML, and to data sources exposed through OLE DB and ODBC. ");
             Console.WriteLine("It supports Connected & Disconnected models using components like `SqlConnection`, `SqlCommand`, `DataSet`, and `DataAdapter`.");
         }
 
