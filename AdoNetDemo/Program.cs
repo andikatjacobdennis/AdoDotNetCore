@@ -107,7 +107,7 @@ namespace AdoNetDemo
         static void Introduction()
         {
             Console.WriteLine("ADO.NET provides access to data sources such as SQL Server and XML, and to data sources exposed through OLE DB and ODBC.");
-            Console.WriteLine("It supports Connected & Disconnected models using components like `SqlConnection`, `SqlCommand`, `DataSet`, and `DataAdapter`.");
+            Console.WriteLine("It supports Connected & Disconnected models using components like `SqlConnection`, `SqlCommand`, `SqlDataReader`, `DataAdapter` and `DataSet`");
         }
 
         static void EnvironmentSetup()
@@ -137,15 +137,15 @@ namespace AdoNetDemo
 
             try
             {
-                using var conn = new SqlConnection(connectionString);
-                using var adapter = new SqlDataAdapter("SELECT TOP 5 Id, Name FROM YourTable", conn);
-                var dataSet = new DataSet();
+                using SqlConnection conn = new SqlConnection(connectionString);
+                using SqlDataAdapter adapter = new SqlDataAdapter("SELECT TOP 5 Id, Name FROM YourTable", conn);
+                DataSet dataSet = new DataSet();
 
                 int rowsFetched = adapter.Fill(dataSet, "YourTable");
 
                 if (rowsFetched > 0)
                 {
-                    var table = dataSet.Tables["YourTable"];
+                    DataTable? table = dataSet.Tables["YourTable"];
                     if (table != null && table.Rows.Count > 0)
                     {
                         Console.WriteLine($"Data loaded into DataSet ({table.Rows.Count} rows).");
@@ -172,8 +172,8 @@ namespace AdoNetDemo
 
         static void UnderstandingDataSet()
         {
-            var ds = new DataSet("MyDataSet");
-            var dt = new DataTable("People");
+            DataSet ds = new DataSet("MyDataSet");
+            DataTable dt = new DataTable("People");
             dt.Columns.Add("Id", typeof(int));
             dt.Columns.Add("Name", typeof(string));
             dt.Rows.Add(1, "Alice");
@@ -198,8 +198,8 @@ namespace AdoNetDemo
             try
             {
                 // Build the DataSet
-                var ds = new DataSet("PeopleDS");
-                var dt = new DataTable("People");
+                DataSet ds = new DataSet("PeopleDS");
+                DataTable dt = new DataTable("People");
                 dt.Columns.Add("Id", typeof(int));
                 dt.Columns.Add("Name", typeof(string));
                 dt.Rows.Add(1, "Alice");
@@ -212,8 +212,8 @@ namespace AdoNetDemo
                 Console.WriteLine($"Serialized to XML. File created at: {xmlFilePath}");
 
                 // Prepare data for JSON serialization
-                var peopleList = new List<object>();
-                var table = ds.Tables["People"];
+                List<object> peopleList = new List<object>();
+                DataTable? table = ds.Tables["People"];
                 if (table != null && table.Rows.Count > 0)
                 {
                     foreach (DataRow row in table.Rows)
@@ -254,10 +254,10 @@ namespace AdoNetDemo
             Console.WriteLine("--- Connected Architecture ---");
             Console.WriteLine("Streaming data directly from the database, connection remains open.");
 
-            using var conn = new SqlConnection(connectionString);
+            using SqlConnection conn = new SqlConnection(connectionString);
             conn.Open();
-            using var cmd = new SqlCommand("SELECT TOP 5 Id, Name FROM YourTable", conn);
-            using var reader = cmd.ExecuteReader();
+            using SqlCommand cmd = new SqlCommand("SELECT TOP 5 Id, Name FROM YourTable", conn);
+            using SqlDataReader reader = cmd.ExecuteReader();
 
             while (reader.Read())
             {
@@ -268,7 +268,7 @@ namespace AdoNetDemo
         static void EstablishingConnection()
         {
             Console.WriteLine("--- Establishing Connection ---");
-            using var conn = new SqlConnection(connectionString);
+            using SqlConnection conn = new SqlConnection(connectionString);
             conn.Open();
             Console.WriteLine("Connection established successfully! The connection will now be closed by the `using` block.");
         }
@@ -277,10 +277,10 @@ namespace AdoNetDemo
         {
             Console.WriteLine("--- Executing Commands ---");
             Console.WriteLine("Demonstrating `ExecuteScalar` to retrieve a single value.");
-            using var conn = new SqlConnection(connectionString);
+            using SqlConnection conn = new SqlConnection(connectionString);
             conn.Open();
 
-            using var cmd = new SqlCommand("SELECT COUNT(*) FROM YourTable", conn);
+            using SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM YourTable", conn);
             int count = (int)cmd.ExecuteScalar();
             Console.WriteLine($"Total Rows in YourTable: {count}");
         }
@@ -291,12 +291,12 @@ namespace AdoNetDemo
 
             try
             {
-                using var conn = new SqlConnection(connectionString);
+                using SqlConnection conn = new SqlConnection(connectionString);
                 conn.Open();
 
                 // CREATE (parameterized)
                 Console.WriteLine("\n1. Inserting a new record using a parameterized command.");
-                using (var insertCmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn))
+                using (SqlCommand insertCmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn))
                 {
                     insertCmd.Parameters.Add("@name", SqlDbType.NVarChar, 100).Value = "SecureName";
                     int rowsInserted = insertCmd.ExecuteNonQuery();
@@ -305,8 +305,8 @@ namespace AdoNetDemo
 
                 // READ
                 Console.WriteLine("\n2. Reading the last inserted record.");
-                using (var selectCmd = new SqlCommand("SELECT TOP 1 Id, Name FROM YourTable ORDER BY Id DESC", conn))
-                using (var reader = selectCmd.ExecuteReader())
+                using (SqlCommand selectCmd = new SqlCommand("SELECT TOP 1 Id, Name FROM YourTable ORDER BY Id DESC", conn))
+                using (SqlDataReader reader = selectCmd.ExecuteReader())
                 {
                     if (reader.Read())
                     {
@@ -321,7 +321,7 @@ namespace AdoNetDemo
                 // UPDATE (parameterized)
                 Console.WriteLine("\n3. Updating the last inserted record.");
                 string updatedName = $"UpdatedName_{DateTime.Now:yyyyMMdd_HHmmssfff}";
-                using var updateCmd = new SqlCommand("UPDATE YourTable SET Name = @newName WHERE Id = (SELECT TOP 1 Id FROM YourTable ORDER BY Id DESC)", conn);
+                using SqlCommand updateCmd = new SqlCommand("UPDATE YourTable SET Name = @newName WHERE Id = (SELECT TOP 1 Id FROM YourTable ORDER BY Id DESC)", conn);
                 updateCmd.Parameters.Add("@newName", SqlDbType.NVarChar, 100).Value = updatedName;
                 int rowsUpdated = updateCmd.ExecuteNonQuery();
                 Console.WriteLine(rowsUpdated > 0
@@ -342,11 +342,11 @@ namespace AdoNetDemo
         {
             Console.WriteLine("--- Reading Bulk Data ---");
             Console.WriteLine("This demonstrates a `SqlDataReader` for efficient, forward-only reading of large datasets.");
-            using var conn = new SqlConnection(connectionString);
+            using SqlConnection conn = new SqlConnection(connectionString);
             conn.Open();
 
-            using var cmd = new SqlCommand("SELECT * FROM LargeTable", conn);
-            using var reader = cmd.ExecuteReader();
+            using SqlCommand cmd = new SqlCommand("SELECT * FROM LargeTable", conn);
+            using SqlDataReader reader = cmd.ExecuteReader();
 
             Console.WriteLine("Reading data line by line (first 5 rows shown):");
             int count = 0;
@@ -378,14 +378,14 @@ namespace AdoNetDemo
 
             try
             {
-                using var conn = new SqlConnection(connectionString);
+                using SqlConnection conn = new SqlConnection(connectionString);
                 conn.Open();
 
                 // Demonstrating a safe parameterized query
-                using var cmd = new SqlCommand("SELECT Id, Name FROM YourTable WHERE Id = @id", conn);
+                using SqlCommand cmd = new SqlCommand("SELECT Id, Name FROM YourTable WHERE Id = @id", conn);
                 cmd.Parameters.Add("@id", SqlDbType.Int).Value = 1; // Example: replace with user input
 
-                using var reader = cmd.ExecuteReader();
+                using SqlDataReader reader = cmd.ExecuteReader();
                 if (reader.Read())
                 {
                     Console.WriteLine($"Found record for Id 1: {reader["Name"]}");
@@ -411,12 +411,12 @@ namespace AdoNetDemo
 
             try
             {
-                using var conn = new SqlConnection(connectionString);
+                using SqlConnection conn = new SqlConnection(connectionString);
                 conn.Open();
 
                 // NOTE: Ensure this stored procedure exists in your database:
                 // CREATE PROCEDURE MyStoredProc @Param1 NVARCHAR(50) AS SELECT @Param1;
-                using var cmd = new SqlCommand("MyStoredProc", conn)
+                using SqlCommand cmd = new SqlCommand("MyStoredProc", conn)
                 {
                     CommandType = CommandType.StoredProcedure
                 };
@@ -447,21 +447,21 @@ namespace AdoNetDemo
 
             try
             {
-                using var conn = new SqlConnection(connectionString);
-                using var adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
-                using var builder = new SqlCommandBuilder(adapter);
+                using SqlConnection conn = new SqlConnection(connectionString);
+                using SqlDataAdapter adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
+                using SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
 
                 // Show the auto-generated UPDATE command
-                var updateCommand = builder.GetUpdateCommand();
+                SqlCommand updateCommand = builder.GetUpdateCommand();
                 Console.WriteLine("\nAuto-generated UPDATE Command:");
                 Console.WriteLine(updateCommand?.CommandText ?? "? No UPDATE command generated.");
 
-                var ds = new DataSet();
+                DataSet ds = new DataSet();
                 int rowsFetched = adapter.Fill(ds, "YourTable");
 
                 if (rowsFetched > 0)
                 {
-                    var table = ds.Tables["YourTable"];
+                    DataTable? table = ds.Tables["YourTable"];
                     if (table != null && table.Rows.Count > 0)
                     {
                         Console.WriteLine($"\nFetched {table.Rows.Count} row(s). Modifying the first row in memory...");
@@ -495,16 +495,16 @@ namespace AdoNetDemo
             Console.WriteLine("--- SQL Bulk Copy ---");
             Console.WriteLine("High-performance bulk insertion of data from a DataTable to a SQL Server table.");
 
-            var dt = new DataTable("BulkData");
+            DataTable dt = new DataTable("BulkData");
             dt.Columns.Add("Name", typeof(string));
             dt.Rows.Add("BulkName1");
             dt.Rows.Add("BulkName2");
             dt.Rows.Add("BulkName3");
 
-            using var conn = new SqlConnection(connectionString);
+            using SqlConnection conn = new SqlConnection(connectionString);
             conn.Open();
 
-            using var bulkCopy = new SqlBulkCopy(conn)
+            using SqlBulkCopy bulkCopy = new SqlBulkCopy(conn)
             {
                 DestinationTableName = "YourTable"
             };
@@ -519,16 +519,16 @@ namespace AdoNetDemo
             Console.WriteLine("--- Database Transactions ---");
             Console.WriteLine("Ensuring multiple operations are treated as a single, atomic unit.");
 
-            using var conn = new SqlConnection(connectionString);
+            using SqlConnection conn = new SqlConnection(connectionString);
             conn.Open();
 
-            using var transaction = conn.BeginTransaction();
+            using SqlTransaction transaction = conn.BeginTransaction();
 
             try
             {
                 Console.WriteLine("Attempting to insert a record within a transaction...");
 
-                using (var cmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn, transaction))
+                using (SqlCommand cmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn, transaction))
                 {
                     cmd.Parameters.Add("@name", SqlDbType.NVarChar, 100).Value = "TransactionTest";
                     cmd.ExecuteNonQuery();
@@ -559,11 +559,11 @@ namespace AdoNetDemo
         static void MsAccessConnection()
         {
             Console.WriteLine("--- Connecting to MS Access Database ---");
-            using var conn = new OleDbConnection(accessConnectionString);
+            using OleDbConnection conn = new OleDbConnection(accessConnectionString);
             conn.Open();
 
             Console.WriteLine("\n1. Inserting a new record using parameterized command.");
-            using var insertCmd = new OleDbCommand("INSERT INTO YourAccessTable (Name, Age) VALUES (?, ?)", conn);
+            using OleDbCommand insertCmd = new OleDbCommand("INSERT INTO YourAccessTable (Name, Age) VALUES (?, ?)", conn);
             // Note: OleDb uses '?' for parameters and they are position-based.
             insertCmd.Parameters.Add("?", OleDbType.VarWChar).Value = "New Access Record";
             insertCmd.Parameters.Add("?", OleDbType.Integer).Value = 30;
@@ -571,8 +571,8 @@ namespace AdoNetDemo
             Console.WriteLine($"Inserted {rows} row(s).");
 
             Console.WriteLine("\n2. Reading data from 'YourAccessTable'.");
-            using var cmd = new OleDbCommand("SELECT TOP 5 ID, Name, Age FROM YourAccessTable", conn);
-            using var reader = cmd.ExecuteReader();
+            using OleDbCommand cmd = new OleDbCommand("SELECT TOP 5 ID, Name, Age FROM YourAccessTable", conn);
+            using OleDbDataReader reader = cmd.ExecuteReader();
             while (reader.Read())
             {
                 Console.WriteLine($"ID: {reader[0]}, Name: {reader[1]}, Age: {reader[2]}");
@@ -586,8 +586,8 @@ namespace AdoNetDemo
             try
             {
                 // Create dataset and table
-                var ds = new DataSet("Products");
-                var dt = new DataTable("Product");
+                DataSet ds = new DataSet("Products");
+                DataTable dt = new DataTable("Product");
                 dt.Columns.Add("Id", typeof(int));
                 dt.Columns.Add("Name", typeof(string));
                 dt.Columns.Add("Price", typeof(decimal));
@@ -609,12 +609,12 @@ namespace AdoNetDemo
                 Console.WriteLine($"XML file created at: {xmlFilePath}");
 
                 // Read XML file into new DataSet
-                var ds2 = new DataSet();
+                DataSet ds2 = new DataSet();
                 ds2.ReadXml(xmlFilePath);
 
                 Console.WriteLine("\nData read back from XML:");
 
-                var table = ds2.Tables["Product"]; // compiler knows this may be null
+                DataTable? table = ds2.Tables["Product"]; // compiler knows this may be null
                 if (table?.Rows.Count > 0)
                 {
                     foreach (DataRow row in table.Rows)
@@ -643,22 +643,22 @@ namespace AdoNetDemo
 
             try
             {
-                using var conn = new SqlConnection(connectionString);
-                using var adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
-                using var builder = new SqlCommandBuilder(adapter);
+                using SqlConnection conn = new SqlConnection(connectionString);
+                using SqlDataAdapter adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
+                using SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
 
-                var ds = new DataSet();
+                DataSet ds = new DataSet();
                 int rowsFetched = adapter.Fill(ds, "YourTable");
 
                 if (rowsFetched > 0)
                 {
-                    var table = ds.Tables["YourTable"];
+                    DataTable? table = ds.Tables["YourTable"];
                     if (table != null)
                     {
                         Console.WriteLine($"Data loaded into DataSet ({table.Rows.Count} existing rows).");
                         Console.WriteLine("Adding a new row in memory...");
 
-                        var newRow = table.NewRow();
+                        DataRow newRow = table.NewRow();
                         newRow["Name"] = $"NewDisconnectedName_{DateTime.Now:yyyyMMdd_HHmmssfff}";
                         table.Rows.Add(newRow);
 
