@@ -106,7 +106,7 @@ namespace AdoNetDemo
 
         static void Introduction()
         {
-            Console.WriteLine("ADO.NET provides access to data sources such as SQL Server and XML, and to data sources exposed through OLE DB and ODBC. ");
+            Console.WriteLine("ADO.NET provides access to data sources such as SQL Server and XML, and to data sources exposed through OLE DB and ODBC.");
             Console.WriteLine("It supports Connected & Disconnected models using components like `SqlConnection`, `SqlCommand`, `DataSet`, and `DataAdapter`.");
         }
 
