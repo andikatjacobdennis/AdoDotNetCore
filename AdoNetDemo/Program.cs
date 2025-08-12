@@ -107,26 +107,26 @@ namespace AdoNetDemo
         static void Introduction()
         {
             Console.WriteLine("ADO.NET is a set of classes for accessing data sources from .NET.");
-            Console.WriteLine("It supports **Connected** & **Disconnected** models using components like `SqlConnection`, `SqlCommand`, `DataSet`, and `DataAdapter`.");
+            Console.WriteLine("It supports Connected & Disconnected models using components like `SqlConnection`, `SqlCommand`, `DataSet`, and `DataAdapter`.");
         }
 
         static void EnvironmentSetup()
         {
             Console.WriteLine("### Environment Setup Steps");
-            Console.WriteLine("1. Install **Visual Studio 2022** or **Visual Studio Code**.");
+            Console.WriteLine("1. Install Visual Studio 2022 or Visual Studio Code.");
             Console.WriteLine("   - VS: https://visualstudio.microsoft.com/vs/");
             Console.WriteLine("   - VS Code: https://code.visualstudio.com/");
             Console.WriteLine();
-            Console.WriteLine("2. Install **.NET 9 SDK**:");
+            Console.WriteLine("2. Install .NET 9 SDK:");
             Console.WriteLine("   - https://dotnet.microsoft.com/en-us/download/dotnet/9.0");
             Console.WriteLine();
             Console.WriteLine("3. Create a Console Project:");
             Console.WriteLine("   `dotnet new console -n AdoNetDemo -f net9.0`");
             Console.WriteLine();
             Console.WriteLine("4. Install necessary NuGet packages:");
-            Console.WriteLine("   - **Microsoft.Data.SqlClient** (for SQL Server)");
+            Console.WriteLine("   - Microsoft.Data.SqlClient (for SQL Server)");
             Console.WriteLine("   `dotnet add package Microsoft.Data.SqlClient`");
-            Console.WriteLine("   - **System.Data.OleDb** (for MS Access, only on Windows)");
+            Console.WriteLine("   - System.Data.OleDb (for MS Access, only on Windows)");
             Console.WriteLine("   `dotnet add package System.Data.OleDb`");
         }
 
@@ -180,10 +180,10 @@ namespace AdoNetDemo
             dt.Rows.Add(2, "Bob");
             ds.Tables.Add(dt);
 
-            Console.WriteLine($"DataSet Name: **{ds.DataSetName}**");
-            Console.WriteLine($"Number of Tables: **{ds.Tables.Count}**");
-            Console.WriteLine($"Table Name: **{ds.Tables[0].TableName}**");
-            Console.WriteLine($"Number of Rows: **{ds.Tables[0].Rows.Count}**");
+            Console.WriteLine($"DataSet Name: {ds.DataSetName}");
+            Console.WriteLine($"Number of Tables: {ds.Tables.Count}");
+            Console.WriteLine($"Table Name: {ds.Tables[0].TableName}");
+            Console.WriteLine($"Number of Rows: {ds.Tables[0].Rows.Count}");
             Console.WriteLine($"Data from DataTable:");
             foreach (DataRow row in ds.Tables[0].Rows)
             {
@@ -361,7 +361,7 @@ namespace AdoNetDemo
         static void SqlInjectionExample()
         {
             Console.WriteLine("--- DANGER: SQL Injection Example ---");
-            Console.WriteLine("This is a **vulnerable approach** and should **NEVER** be used in production.");
+            Console.WriteLine("This is a vulnerable approach and should NEVER be used in production.");
             Console.WriteLine("Assume a user inputs `1 OR 1=1; --`");
             string userInput = "1 OR 1=1; --";
             string vulnerableQuery = "SELECT * FROM YourTable WHERE Id = " + userInput;
