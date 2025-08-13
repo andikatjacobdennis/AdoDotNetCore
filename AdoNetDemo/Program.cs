@@ -36,10 +36,10 @@ namespace AdoNetDemo
                 Console.WriteLine("7. Understanding DataSet");
                 Console.WriteLine("8. Executing Stored Procedures");
                 Console.WriteLine("9. SQL Bulk Copy");
-                Console.WriteLine("10. Serializing DataSet");
-                Console.WriteLine("11. SQL Injection Example");
-                Console.WriteLine("12. SQL Command Builder");
-                Console.WriteLine("13. Transactions");
+                Console.WriteLine("10. Transactions");
+                Console.WriteLine("11. Serializing DataSet");
+                Console.WriteLine("12. SQL Injection Example");
+                Console.WriteLine("13. SQL Command Builder");
                 Console.WriteLine("14. Connect to MS Access Database");
                 Console.WriteLine("15. XML Data Read/Write");
                 Console.WriteLine("16. Disconnected Update Back to SQL Server");
@@ -62,10 +62,10 @@ namespace AdoNetDemo
                         case "7": UnderstandingDataSet(); break;
                         case "8": ExecutingProcedures(); break;
                         case "9": SqlBulkCopyDemo(); break;
-                        case "10": SerializingDataSet(); break;
-                        case "11": SqlInjectionExample(); break;
-                        case "12": SqlCommandBuilderDemo(); break;
-                        case "13": TransactionsDemo(); break;
+                        case "10": TransactionsDemo(); break;
+                        case "11": SerializingDataSet(); break;
+                        case "12": SqlInjectionExample(); break;
+                        case "13": SqlCommandBuilderDemo(); break;
                         case "14":
                             if (OperatingSystem.IsWindows())
                                 MsAccessConnection();
@@ -319,6 +319,47 @@ namespace AdoNetDemo
             Console.WriteLine("Bulk copy completed successfully.");
         }
 
+        static void TransactionsDemo()
+        {
+            Console.WriteLine("--- Database Transactions ---");
+            Console.WriteLine("Ensuring multiple operations are treated as a single, atomic unit.");
+
+            using SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
+
+            using SqlTransaction transaction = conn.BeginTransaction();
+
+            try
+            {
+                Console.WriteLine("Attempting to insert a record within a transaction...");
+
+                using (SqlCommand cmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn, transaction))
+                {
+                    cmd.Parameters.Add("@name", SqlDbType.NVarChar, 100).Value = "TransactionTest";
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Example: Uncomment to force an error and trigger rollback
+                // using (var cmd2 = new SqlCommand("INSERT INTO NonExistentTable (Name) VALUES ('fail')", conn, transaction))
+                // {
+                //     cmd2.ExecuteNonQuery();
+                // }
+
+                transaction.Commit();
+                Console.WriteLine("Transaction committed successfully. Data saved.");
+            }
+            catch (SqlException ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine($"[SQL Error] Transaction rolled back: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine($"[Unexpected Error] Transaction rolled back: {ex.Message}");
+            }
+        }
+
         static void SerializingDataSet()
         {
             Console.WriteLine("--- Serializing DataSet ---");
@@ -437,47 +478,6 @@ namespace AdoNetDemo
             catch (Exception ex)
             {
                 Console.WriteLine($"[Unexpected Error] {ex.Message}");
-            }
-        }
-
-        static void TransactionsDemo()
-        {
-            Console.WriteLine("--- Database Transactions ---");
-            Console.WriteLine("Ensuring multiple operations are treated as a single, atomic unit.");
-
-            using SqlConnection conn = new SqlConnection(connectionString);
-            conn.Open();
-
-            using SqlTransaction transaction = conn.BeginTransaction();
-
-            try
-            {
-                Console.WriteLine("Attempting to insert a record within a transaction...");
-
-                using (SqlCommand cmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn, transaction))
-                {
-                    cmd.Parameters.Add("@name", SqlDbType.NVarChar, 100).Value = "TransactionTest";
-                    cmd.ExecuteNonQuery();
-                }
-
-                // Example: Uncomment to force an error and trigger rollback
-                // using (var cmd2 = new SqlCommand("INSERT INTO NonExistentTable (Name) VALUES ('fail')", conn, transaction))
-                // {
-                //     cmd2.ExecuteNonQuery();
-                // }
-
-                transaction.Commit();
-                Console.WriteLine("Transaction committed successfully. Data saved.");
-            }
-            catch (SqlException ex)
-            {
-                transaction.Rollback();
-                Console.WriteLine($"[SQL Error] Transaction rolled back: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                transaction.Rollback();
-                Console.WriteLine($"[Unexpected Error] Transaction rolled back: {ex.Message}");
             }
         }
 
