@@ -35,14 +35,14 @@ namespace AdoNetDemo
                 Console.WriteLine("6. Disconnected Architecture");
                 Console.WriteLine("7. Understanding DataSet");
                 Console.WriteLine("8. Executing Stored Procedures");
-                Console.WriteLine("10. SQL Bulk Copy");
-                Console.WriteLine("11. Serializing DataSet");
-                Console.WriteLine("12. SQL Injection Example");
-                Console.WriteLine("13. SQL Command Builder");
-                Console.WriteLine("14. Transactions");
-                Console.WriteLine("15. Connect to MS Access Database");
-                Console.WriteLine("16. XML Data Read/Write");
-                Console.WriteLine("17. Disconnected Update Back to SQL Server");
+                Console.WriteLine("9. SQL Bulk Copy");
+                Console.WriteLine("10. Serializing DataSet");
+                Console.WriteLine("11. SQL Injection Example");
+                Console.WriteLine("12. SQL Command Builder");
+                Console.WriteLine("13. Transactions");
+                Console.WriteLine("14. Connect to MS Access Database");
+                Console.WriteLine("15. XML Data Read/Write");
+                Console.WriteLine("16. Disconnected Update Back to SQL Server");
                 Console.WriteLine("0. Exit");
                 Console.Write("Choose an option: ");
 
@@ -61,19 +61,19 @@ namespace AdoNetDemo
                         case "6": DisconnectedArchitecture(); break;
                         case "7": UnderstandingDataSet(); break;
                         case "8": ExecutingProcedures(); break;
-                        case "10": SqlBulkCopyDemo(); break;
-                        case "11": SerializingDataSet(); break;
-                        case "12": SqlInjectionExample(); break;
-                        case "13": SqlCommandBuilderDemo(); break;
-                        case "14": TransactionsDemo(); break;
-                        case "15":
+                        case "9": SqlBulkCopyDemo(); break;
+                        case "10": SerializingDataSet(); break;
+                        case "11": SqlInjectionExample(); break;
+                        case "12": SqlCommandBuilderDemo(); break;
+                        case "13": TransactionsDemo(); break;
+                        case "14":
                             if (OperatingSystem.IsWindows())
                                 MsAccessConnection();
                             else
                                 Console.WriteLine("Access DB operations are only supported on Windows.");
                             break;
-                        case "16": XmlDataReadWrite(); break;
-                        case "17": DisconnectedUpdateBackToSql(); break;
+                        case "15": XmlDataReadWrite(); break;
+                        case "16": DisconnectedUpdateBackToSql(); break;
                         case "0": return;
                         default: Console.WriteLine("Invalid choice."); break;
                     }
