@@ -35,9 +35,9 @@ namespace AdoNetDemo
                 Console.WriteLine("6. Disconnected Architecture");
                 Console.WriteLine("7. Understanding DataSet");
                 Console.WriteLine("8. Executing Stored Procedures");
-                Console.WriteLine("9. Serializing DataSet");
-                Console.WriteLine("10. Reading Bulk Data");
-                Console.WriteLine("11. SQL Bulk Copy");
+                Console.WriteLine("9. Reading Bulk Data");
+                Console.WriteLine("10. SQL Bulk Copy");
+                Console.WriteLine("11. Serializing DataSet");
                 Console.WriteLine("12. SQL Injection Example");
                 Console.WriteLine("13. SQL Command Builder");
                 Console.WriteLine("14. Transactions");
@@ -62,9 +62,9 @@ namespace AdoNetDemo
                         case "6": DisconnectedArchitecture(); break;
                         case "7": UnderstandingDataSet(); break;
                         case "8": ExecutingProcedures(); break;
-                        case "9": SerializingDataSet(); break;
-                        case "10": ReadingBulkData(); break;
-                        case "11": SqlBulkCopyDemo(); break;
+                        case "9": ReadingBulkData(); break;
+                        case "10": SqlBulkCopyDemo(); break;
+                        case "11": SerializingDataSet(); break;
                         case "12": SqlInjectionExample(); break;
                         case "13": SqlCommandBuilderDemo(); break;
                         case "14": TransactionsDemo(); break;
@@ -297,6 +297,50 @@ namespace AdoNetDemo
             }
         }
 
+        static void ReadingBulkData()
+        {
+            Console.WriteLine("--- Reading Bulk Data ---");
+            Console.WriteLine("This demonstrates a `SqlDataReader` for efficient, forward-only reading of large datasets.");
+            using SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
+
+            using SqlCommand cmd = new SqlCommand("SELECT * FROM LargeTable", conn);
+            using SqlDataReader reader = cmd.ExecuteReader();
+
+            Console.WriteLine("Reading data line by line (first 5 rows shown):");
+            int count = 0;
+            while (reader.Read() && count < 5)
+            {
+                Console.WriteLine($"{reader[0]} - {reader[1]}...");
+                count++;
+            }
+            Console.WriteLine($"...and so on. Total fields: {reader.FieldCount}");
+        }
+
+        static void SqlBulkCopyDemo()
+        {
+            Console.WriteLine("--- SQL Bulk Copy ---");
+            Console.WriteLine("High-performance bulk insertion of data from a DataTable to a SQL Server table.");
+
+            DataTable dt = new DataTable("BulkData");
+            dt.Columns.Add("Name", typeof(string));
+            dt.Rows.Add("BulkName1");
+            dt.Rows.Add("BulkName2");
+            dt.Rows.Add("BulkName3");
+
+            using SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
+
+            using SqlBulkCopy bulkCopy = new SqlBulkCopy(conn)
+            {
+                DestinationTableName = "YourTable"
+            };
+
+            Console.WriteLine("Starting bulk copy of 3 rows...");
+            bulkCopy.WriteToServer(dt);
+            Console.WriteLine("Bulk copy completed successfully.");
+        }
+
         static void SerializingDataSet()
         {
             Console.WriteLine("--- Serializing DataSet ---");
@@ -354,27 +398,7 @@ namespace AdoNetDemo
                 Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
         }
-
-        static void ReadingBulkData()
-        {
-            Console.WriteLine("--- Reading Bulk Data ---");
-            Console.WriteLine("This demonstrates a `SqlDataReader` for efficient, forward-only reading of large datasets.");
-            using SqlConnection conn = new SqlConnection(connectionString);
-            conn.Open();
-
-            using SqlCommand cmd = new SqlCommand("SELECT * FROM LargeTable", conn);
-            using SqlDataReader reader = cmd.ExecuteReader();
-
-            Console.WriteLine("Reading data line by line (first 5 rows shown):");
-            int count = 0;
-            while (reader.Read() && count < 5)
-            {
-                Console.WriteLine($"{reader[0]} - {reader[1]}...");
-                count++;
-            }
-            Console.WriteLine($"...and so on. Total fields: {reader.FieldCount}");
-        }
-
+        
         static void SqlInjectionExample()
         {
             Console.WriteLine("--- DANGER: SQL Injection Example ---");
@@ -436,30 +460,6 @@ namespace AdoNetDemo
             {
                 Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
-        }
-
-        static void SqlBulkCopyDemo()
-        {
-            Console.WriteLine("--- SQL Bulk Copy ---");
-            Console.WriteLine("High-performance bulk insertion of data from a DataTable to a SQL Server table.");
-
-            DataTable dt = new DataTable("BulkData");
-            dt.Columns.Add("Name", typeof(string));
-            dt.Rows.Add("BulkName1");
-            dt.Rows.Add("BulkName2");
-            dt.Rows.Add("BulkName3");
-
-            using SqlConnection conn = new SqlConnection(connectionString);
-            conn.Open();
-
-            using SqlBulkCopy bulkCopy = new SqlBulkCopy(conn)
-            {
-                DestinationTableName = "YourTable"
-            };
-
-            Console.WriteLine("Starting bulk copy of 3 rows...");
-            bulkCopy.WriteToServer(dt);
-            Console.WriteLine("Bulk copy completed successfully.");
         }
 
         static void TransactionsDemo()
