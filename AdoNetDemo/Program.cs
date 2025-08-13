@@ -2,7 +2,6 @@ using Microsoft.Data.SqlClient; // For SQL Server database operations
 using System.Data; // For SQL Server database operations
 using System.Data.OleDb; // For MS Access database operations
 using System.Runtime.Versioning; // For Windows-specific features
-using System.Text;
 using System.Text.Json; // For JSON serialization
 
 namespace AdoNetDemo
