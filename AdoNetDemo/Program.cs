@@ -31,10 +31,10 @@ namespace AdoNetDemo
                 Console.WriteLine("2. Environment Setup");
                 Console.WriteLine("3. Connected Architecture");
                 Console.WriteLine("4. Executing Commands");
-                Console.WriteLine("5. Disconnected Architecture");
-                Console.WriteLine("6. Understanding DataSet");
-                Console.WriteLine("7. Serializing DataSet");
-                Console.WriteLine("8. CRUD Operations");
+                Console.WriteLine("5. CRUD Operations");
+                Console.WriteLine("6. Disconnected Architecture");
+                Console.WriteLine("7. Understanding DataSet");
+                Console.WriteLine("8. Serializing DataSet");
                 Console.WriteLine("9. Reading Bulk Data");
                 Console.WriteLine("10. SQL Bulk Copy");
                 Console.WriteLine("11. SQL Injection Example");
@@ -59,10 +59,10 @@ namespace AdoNetDemo
                         case "2": EnvironmentSetup(); break;
                         case "3": ConnectedArchitecture(); break;
                         case "4": ExecutingCommands(); break;
-                        case "5": DisconnectedArchitecture(); break;
-                        case "6": UnderstandingDataSet(); break;
-                        case "7": SerializingDataSet(); break;
-                        case "8": CrudOperations(); break;
+                        case "5": CrudOperations(); break;
+                        case "6": DisconnectedArchitecture(); break;
+                        case "7": UnderstandingDataSet(); break;
+                        case "8": SerializingDataSet(); break;
                         case "9": ReadingBulkData(); break;
                         case "10": SqlBulkCopyDemo(); break;
                         case "11": SqlInjectionExample(); break;
@@ -152,6 +152,59 @@ namespace AdoNetDemo
             using SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM YourTable", conn);
             int count = (int)cmd.ExecuteScalar();
             Console.WriteLine($"Total Rows in YourTable: {count}");
+        }
+
+        static void CrudOperations()
+        {
+            Console.WriteLine("--- CRUD Operations ---");
+
+            try
+            {
+                using SqlConnection conn = new SqlConnection(connectionString);
+                conn.Open();
+
+                // CREATE (parameterized)
+                Console.WriteLine("\n1. Inserting a new record using a parameterized command.");
+                using (SqlCommand insertCmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn))
+                {
+                    insertCmd.Parameters.Add("@name", SqlDbType.NVarChar, 100).Value = "SecureName";
+                    int rowsInserted = insertCmd.ExecuteNonQuery();
+                    Console.WriteLine($"Inserted {rowsInserted} record(s).");
+                }
+
+                // READ
+                Console.WriteLine("\n2. Reading the last inserted record.");
+                using (SqlCommand selectCmd = new SqlCommand("SELECT TOP 1 Id, Name FROM YourTable ORDER BY Id DESC", conn))
+                using (SqlDataReader reader = selectCmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        Console.WriteLine($"Last Inserted Record ? Id: {reader["Id"]}, Name: {reader["Name"]}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("No records found.");
+                    }
+                }
+
+                // UPDATE (parameterized)
+                Console.WriteLine("\n3. Updating the last inserted record.");
+                string updatedName = $"UpdatedName_{DateTime.Now:yyyyMMdd_HHmmssfff}";
+                using SqlCommand updateCmd = new SqlCommand("UPDATE YourTable SET Name = @newName WHERE Id = (SELECT TOP 1 Id FROM YourTable ORDER BY Id DESC)", conn);
+                updateCmd.Parameters.Add("@newName", SqlDbType.NVarChar, 100).Value = updatedName;
+                int rowsUpdated = updateCmd.ExecuteNonQuery();
+                Console.WriteLine(rowsUpdated > 0
+                    ? $"Updated {rowsUpdated} record(s) to '{updatedName}'."
+                    : "No records updated.");
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"[SQL Error] {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
+            }
         }
 
         static void DisconnectedArchitecture()
@@ -255,59 +308,6 @@ namespace AdoNetDemo
             catch (IOException ioEx)
             {
                 Console.WriteLine($"[File Error] {ioEx.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Unexpected Error] {ex.Message}");
-            }
-        }
-
-        static void CrudOperations()
-        {
-            Console.WriteLine("--- CRUD Operations ---");
-
-            try
-            {
-                using SqlConnection conn = new SqlConnection(connectionString);
-                conn.Open();
-
-                // CREATE (parameterized)
-                Console.WriteLine("\n1. Inserting a new record using a parameterized command.");
-                using (SqlCommand insertCmd = new SqlCommand("INSERT INTO YourTable (Name) VALUES (@name)", conn))
-                {
-                    insertCmd.Parameters.Add("@name", SqlDbType.NVarChar, 100).Value = "SecureName";
-                    int rowsInserted = insertCmd.ExecuteNonQuery();
-                    Console.WriteLine($"Inserted {rowsInserted} record(s).");
-                }
-
-                // READ
-                Console.WriteLine("\n2. Reading the last inserted record.");
-                using (SqlCommand selectCmd = new SqlCommand("SELECT TOP 1 Id, Name FROM YourTable ORDER BY Id DESC", conn))
-                using (SqlDataReader reader = selectCmd.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        Console.WriteLine($"Last Inserted Record ? Id: {reader["Id"]}, Name: {reader["Name"]}");
-                    }
-                    else
-                    {
-                        Console.WriteLine("No records found.");
-                    }
-                }
-
-                // UPDATE (parameterized)
-                Console.WriteLine("\n3. Updating the last inserted record.");
-                string updatedName = $"UpdatedName_{DateTime.Now:yyyyMMdd_HHmmssfff}";
-                using SqlCommand updateCmd = new SqlCommand("UPDATE YourTable SET Name = @newName WHERE Id = (SELECT TOP 1 Id FROM YourTable ORDER BY Id DESC)", conn);
-                updateCmd.Parameters.Add("@newName", SqlDbType.NVarChar, 100).Value = updatedName;
-                int rowsUpdated = updateCmd.ExecuteNonQuery();
-                Console.WriteLine(rowsUpdated > 0
-                    ? $"Updated {rowsUpdated} record(s) to '{updatedName}'."
-                    : "No records updated.");
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine($"[SQL Error] {ex.Message}");
             }
             catch (Exception ex)
             {
