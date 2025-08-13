@@ -1,17 +1,15 @@
-using Microsoft.Data.SqlClient;
-using System.Data;
-using System.Data.OleDb;
-using System.Runtime.Versioning;
-using System.Text.Json;
+using Microsoft.Data.SqlClient; // For SQL Server database operations
+using System.Data; // For SQL Server database operations
+using System.Data.OleDb; // For MS Access database operations
+using System.Runtime.Versioning; // For Windows-specific features
+using System.Text.Json; // For JSON serialization
 
 namespace AdoNetDemo
 {
     class Program
     {
-        private static readonly string connectionString =
-            "Server=.;Database=AdoNetTrainingDB;Trusted_Connection=True;TrustServerCertificate=True;";
-        private static readonly string accessConnectionString =
-            @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=SampleAccessDB.accdb;Persist Security Info=False;";
+        private static readonly string connectionString = "Server=.;Database=AdoNetTrainingDB;Trusted_Connection=True;TrustServerCertificate=True;";
+        private static readonly string accessConnectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=SampleAccessDB.accdb ";
 
         private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
@@ -31,23 +29,22 @@ namespace AdoNetDemo
                 Console.WriteLine("=== ADO.NET Training Menu ===");
                 Console.WriteLine("1. Introduction");
                 Console.WriteLine("2. Environment Setup");
-                Console.WriteLine("3. Disconnected Architecture");
-                Console.WriteLine("4. Understanding DataSet");
-                Console.WriteLine("5. Serializing DataSet");
-                Console.WriteLine("6. Connected Architecture");
-                Console.WriteLine("7. Establishing Connection");
-                Console.WriteLine("8. Executing Commands");
-                Console.WriteLine("9. CRUD Operations");
-                Console.WriteLine("10. Reading Bulk Data");
-                Console.WriteLine("11. SQL Bulk Copy");
-                Console.WriteLine("12. SQL Injection Example");
-                Console.WriteLine("13. Parameterized Commands (Recommended)");
-                Console.WriteLine("14. Executing Stored Procedures");
-                Console.WriteLine("15. SQL Command Builder");
-                Console.WriteLine("16. Transactions");
-                Console.WriteLine("17. Connect to MS Access Database");
-                Console.WriteLine("18. XML Data Read/Write");
-                Console.WriteLine("19. Disconnected Update Back to SQL Server");
+                Console.WriteLine("3. Connected Architecture");
+                Console.WriteLine("4. Executing Commands");
+                Console.WriteLine("5. Disconnected Architecture");
+                Console.WriteLine("6. Understanding DataSet");
+                Console.WriteLine("7. Serializing DataSet");
+                Console.WriteLine("8. CRUD Operations");
+                Console.WriteLine("9. Reading Bulk Data");
+                Console.WriteLine("10. SQL Bulk Copy");
+                Console.WriteLine("11. SQL Injection Example");
+                Console.WriteLine("12. Parameterized Commands (Recommended)");
+                Console.WriteLine("13. Executing Stored Procedures");
+                Console.WriteLine("14. SQL Command Builder");
+                Console.WriteLine("15. Transactions");
+                Console.WriteLine("16. Connect to MS Access Database");
+                Console.WriteLine("17. XML Data Read/Write");
+                Console.WriteLine("18. Disconnected Update Back to SQL Server");
                 Console.WriteLine("0. Exit");
                 Console.Write("Choose an option: ");
 
@@ -60,28 +57,27 @@ namespace AdoNetDemo
                     {
                         case "1": Introduction(); break;
                         case "2": EnvironmentSetup(); break;
-                        case "3": DisconnectedArchitecture(); break;
-                        case "4": UnderstandingDataSet(); break;
-                        case "5": SerializingDataSet(); break;
-                        case "6": ConnectedArchitecture(); break;
-                        case "7": EstablishingConnection(); break;
-                        case "8": ExecutingCommands(); break;
-                        case "9": CrudOperations(); break;
-                        case "10": ReadingBulkData(); break;
-                        case "11": SqlBulkCopyDemo(); break;
-                        case "12": SqlInjectionExample(); break;
-                        case "13": ParameterizedCommands(); break;
-                        case "14": ExecutingProcedures(); break;
-                        case "15": SqlCommandBuilderDemo(); break;
-                        case "16": TransactionsDemo(); break;
-                        case "17":
+                        case "3": ConnectedArchitecture(); break;
+                        case "4": ExecutingCommands(); break;
+                        case "5": DisconnectedArchitecture(); break;
+                        case "6": UnderstandingDataSet(); break;
+                        case "7": SerializingDataSet(); break;
+                        case "8": CrudOperations(); break;
+                        case "9": ReadingBulkData(); break;
+                        case "10": SqlBulkCopyDemo(); break;
+                        case "11": SqlInjectionExample(); break;
+                        case "12": ParameterizedCommands(); break;
+                        case "13": ExecutingProcedures(); break;
+                        case "14": SqlCommandBuilderDemo(); break;
+                        case "15": TransactionsDemo(); break;
+                        case "16":
                             if (OperatingSystem.IsWindows())
                                 MsAccessConnection();
                             else
                                 Console.WriteLine("Access DB operations are only supported on Windows.");
                             break;
-                        case "18": XmlDataReadWrite(); break;
-                        case "19": DisconnectedUpdateBackToSql(); break;
+                        case "17": XmlDataReadWrite(); break;
+                        case "18": DisconnectedUpdateBackToSql(); break;
                         case "0": return;
                         default: Console.WriteLine("Invalid choice."); break;
                     }
@@ -128,6 +124,34 @@ namespace AdoNetDemo
             Console.WriteLine("   `dotnet add package Microsoft.Data.SqlClient`");
             Console.WriteLine("   - System.Data.OleDb (for MS Access, only on Windows)");
             Console.WriteLine("   `dotnet add package System.Data.OleDb`");
+        }
+
+        static void ConnectedArchitecture()
+        {
+            Console.WriteLine("--- Connected Architecture ---");
+            Console.WriteLine("Streaming data directly from the database, connection remains open.");
+
+            using SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
+            using SqlCommand cmd = new SqlCommand("SELECT TOP 5 Id, Name FROM YourTable", conn);
+            using SqlDataReader reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                Console.WriteLine($"{reader["Id"]} - {reader["Name"]}");
+            }
+        }
+
+        static void ExecutingCommands()
+        {
+            Console.WriteLine("--- Executing Commands ---");
+            Console.WriteLine("Demonstrating `ExecuteScalar` to retrieve a single value.");
+            using SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
+
+            using SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM YourTable", conn);
+            int count = (int)cmd.ExecuteScalar();
+            Console.WriteLine($"Total Rows in YourTable: {count}");
         }
 
         static void DisconnectedArchitecture()
@@ -236,42 +260,6 @@ namespace AdoNetDemo
             {
                 Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
-        }
-
-        static void ConnectedArchitecture()
-        {
-            Console.WriteLine("--- Connected Architecture ---");
-            Console.WriteLine("Streaming data directly from the database, connection remains open.");
-
-            using SqlConnection conn = new SqlConnection(connectionString);
-            conn.Open();
-            using SqlCommand cmd = new SqlCommand("SELECT TOP 5 Id, Name FROM YourTable", conn);
-            using SqlDataReader reader = cmd.ExecuteReader();
-
-            while (reader.Read())
-            {
-                Console.WriteLine($"{reader["Id"]} - {reader["Name"]}");
-            }
-        }
-
-        static void EstablishingConnection()
-        {
-            Console.WriteLine("--- Establishing Connection ---");
-            using SqlConnection conn = new SqlConnection(connectionString);
-            conn.Open();
-            Console.WriteLine("Connection established successfully! The connection will now be closed by the `using` block.");
-        }
-
-        static void ExecutingCommands()
-        {
-            Console.WriteLine("--- Executing Commands ---");
-            Console.WriteLine("Demonstrating `ExecuteScalar` to retrieve a single value.");
-            using SqlConnection conn = new SqlConnection(connectionString);
-            conn.Open();
-
-            using SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM YourTable", conn);
-            int count = (int)cmd.ExecuteScalar();
-            Console.WriteLine($"Total Rows in YourTable: {count}");
         }
 
         static void CrudOperations()
