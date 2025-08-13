@@ -37,9 +37,9 @@ namespace AdoNetDemo
                 Console.WriteLine("8. Executing Stored Procedures");
                 Console.WriteLine("9. SQL Bulk Copy");
                 Console.WriteLine("10. Transactions");
-                Console.WriteLine("11. Serializing DataSet");
-                Console.WriteLine("12. SQL Injection Example");
-                Console.WriteLine("13. SQL Command Builder");
+                Console.WriteLine("11. SQL Command Builder");
+                Console.WriteLine("12. Serializing DataSet");
+                Console.WriteLine("13. SQL Injection Example");
                 Console.WriteLine("14. Connect to MS Access Database");
                 Console.WriteLine("15. XML Data Read/Write");
                 Console.WriteLine("16. Disconnected Update Back to SQL Server");
@@ -63,9 +63,9 @@ namespace AdoNetDemo
                         case "8": ExecutingProcedures(); break;
                         case "9": SqlBulkCopyDemo(); break;
                         case "10": TransactionsDemo(); break;
-                        case "11": SerializingDataSet(); break;
-                        case "12": SqlInjectionExample(); break;
-                        case "13": SqlCommandBuilderDemo(); break;
+                        case "11": SqlCommandBuilderDemo(); break;
+                        case "12": SerializingDataSet(); break;
+                        case "13": SqlInjectionExample(); break;
                         case "14":
                             if (OperatingSystem.IsWindows())
                                 MsAccessConnection();
@@ -360,6 +360,56 @@ namespace AdoNetDemo
             }
         }
 
+        static void SqlCommandBuilderDemo()
+        {
+            Console.WriteLine("--- SqlCommandBuilder Demo ---");
+            Console.WriteLine("Automatically generates INSERT, UPDATE, and DELETE commands for a DataAdapter.");
+
+            try
+            {
+                using SqlConnection conn = new SqlConnection(connectionString);
+                using SqlDataAdapter adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
+                using SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
+
+                // Show the auto-generated UPDATE command
+                SqlCommand updateCommand = builder.GetUpdateCommand();
+                Console.WriteLine("\nAuto-generated UPDATE Command:");
+                Console.WriteLine(updateCommand?.CommandText ?? "? No UPDATE command generated.");
+
+                DataSet ds = new DataSet();
+                int rowsFetched = adapter.Fill(ds, "YourTable");
+
+                if (rowsFetched > 0)
+                {
+                    DataTable? table = ds.Tables["YourTable"];
+                    if (table != null && table.Rows.Count > 0)
+                    {
+                        Console.WriteLine($"\nFetched {table.Rows.Count} row(s). Modifying the first row in memory...");
+                        table.Rows[0]["Name"] = $"UpdatedName_{DateTime.Now:yyyyMMdd_HHmmssfff}";
+
+                        Console.WriteLine("Pushing changes back to the database using adapter.Update()...");
+                        int rowsUpdated = adapter.Update(ds, "YourTable");
+
+                        Console.WriteLine(rowsUpdated > 0
+                            ? $"Successfully updated {rowsUpdated} row(s) in the database."
+                            : "No rows were updated.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No data found. Ensure 'YourTable' exists and has rows.");
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"[SQL Error] {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
+            }
+        }
+
         static void SerializingDataSet()
         {
             Console.WriteLine("--- Serializing DataSet ---");
@@ -429,56 +479,6 @@ namespace AdoNetDemo
             Console.WriteLine($"Vulnerable Query: `{vulnerableQuery}`");
             Console.WriteLine("This query would return all rows, bypassing the intended filter.");
             Console.WriteLine("\nInstead, always use parameterized queries to prevent this attack.");
-        }
-
-        static void SqlCommandBuilderDemo()
-        {
-            Console.WriteLine("--- SqlCommandBuilder Demo ---");
-            Console.WriteLine("Automatically generates INSERT, UPDATE, and DELETE commands for a DataAdapter.");
-
-            try
-            {
-                using SqlConnection conn = new SqlConnection(connectionString);
-                using SqlDataAdapter adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
-                using SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
-
-                // Show the auto-generated UPDATE command
-                SqlCommand updateCommand = builder.GetUpdateCommand();
-                Console.WriteLine("\nAuto-generated UPDATE Command:");
-                Console.WriteLine(updateCommand?.CommandText ?? "? No UPDATE command generated.");
-
-                DataSet ds = new DataSet();
-                int rowsFetched = adapter.Fill(ds, "YourTable");
-
-                if (rowsFetched > 0)
-                {
-                    DataTable? table = ds.Tables["YourTable"];
-                    if (table != null && table.Rows.Count > 0)
-                    {
-                        Console.WriteLine($"\nFetched {table.Rows.Count} row(s). Modifying the first row in memory...");
-                        table.Rows[0]["Name"] = $"UpdatedName_{DateTime.Now:yyyyMMdd_HHmmssfff}";
-
-                        Console.WriteLine("Pushing changes back to the database using adapter.Update()...");
-                        int rowsUpdated = adapter.Update(ds, "YourTable");
-
-                        Console.WriteLine(rowsUpdated > 0
-                            ? $"Successfully updated {rowsUpdated} row(s) in the database."
-                            : "No rows were updated.");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("No data found. Ensure 'YourTable' exists and has rows.");
-                }
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine($"[SQL Error] {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Unexpected Error] {ex.Message}");
-            }
         }
 
         [SupportedOSPlatform("windows")]
