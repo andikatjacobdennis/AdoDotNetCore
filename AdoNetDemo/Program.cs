@@ -39,9 +39,9 @@ namespace AdoNetDemo
                 Console.WriteLine("10. Transactions");
                 Console.WriteLine("11. SQL Command Builder");
                 Console.WriteLine("12. Connect to MS Access Database");
-                Console.WriteLine("13. Serializing DataSet");
-                Console.WriteLine("14. SQL Injection Example");
-                Console.WriteLine("15. XML Data Read/Write");
+                Console.WriteLine("13. XML Data Read/Write");
+                Console.WriteLine("14. Serializing DataSet");
+                Console.WriteLine("15. SQL Injection Example");
                 Console.WriteLine("0. Exit");
                 Console.Write("Choose an option: ");
 
@@ -69,9 +69,10 @@ namespace AdoNetDemo
                             else
                                 Console.WriteLine("Access DB operations are only supported on Windows.");
                             break;
-                        case "13": SerializingDataSet(); break;
-                        case "14": SqlInjectionExample(); break;
-                        case "15": XmlDataReadWrite(); break;
+                        case "13": XmlDataReadWrite(); break;
+                        case "14": SerializingDataSet(); break;
+                        case "15": SqlInjectionExample(); break;
+
                         case "0": return;
                         default: Console.WriteLine("Invalid choice."); break;
                     }
