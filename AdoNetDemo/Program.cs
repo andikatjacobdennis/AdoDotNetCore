@@ -443,6 +443,64 @@ namespace AdoNetDemo
             }
         }
 
+        static void XmlDataReadWrite()
+        {
+            Console.WriteLine("--- XML Data Read/Write ---");
+
+            try
+            {
+                // Create dataset and table
+                DataSet ds = new DataSet("Products");
+                DataTable dt = new DataTable("Product");
+                dt.Columns.Add("Id", typeof(int));
+                dt.Columns.Add("Name", typeof(string));
+                dt.Columns.Add("Price", typeof(decimal));
+
+                // Sample data
+                dt.Rows.Add(1, "Laptop", 1200.50m);
+                dt.Rows.Add(2, "Mouse", 15.99m);
+                ds.Tables.Add(dt);
+
+                // Save XML file
+                string xmlFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "products.xml");
+
+                if (File.Exists(xmlFilePath))
+                {
+                    Console.WriteLine($"Overwriting existing file: {xmlFilePath}");
+                }
+
+                ds.WriteXml(xmlFilePath, XmlWriteMode.WriteSchema);
+                Console.WriteLine($"XML file created at: {xmlFilePath}");
+
+                // Read XML file into new DataSet
+                DataSet ds2 = new DataSet();
+                ds2.ReadXml(xmlFilePath);
+
+                Console.WriteLine("\nData read back from XML:");
+
+                DataTable? table = ds2.Tables["Product"]; // compiler knows this may be null
+                if (table?.Rows.Count > 0)
+                {
+                    foreach (DataRow row in table.Rows)
+                    {
+                        Console.WriteLine($"ID: {row["Id"]}, Name: {row["Name"]}, Price: {row["Price"]}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No 'Product' table found or table is empty.");
+                }
+            }
+            catch (IOException ioEx)
+            {
+                Console.WriteLine($"[File Error] {ioEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
+            }
+        }
+
         static void SerializingDataSet()
         {
             Console.WriteLine("--- Serializing DataSet ---");
@@ -500,7 +558,7 @@ namespace AdoNetDemo
                 Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
         }
-        
+
         static void SqlInjectionExample()
         {
             Console.WriteLine("--- DANGER: SQL Injection Example ---");
@@ -512,64 +570,6 @@ namespace AdoNetDemo
             Console.WriteLine($"Vulnerable Query: `{vulnerableQuery}`");
             Console.WriteLine("This query would return all rows, bypassing the intended filter.");
             Console.WriteLine("\nInstead, always use parameterized queries to prevent this attack.");
-        }
-
-        static void XmlDataReadWrite()
-        {
-            Console.WriteLine("--- XML Data Read/Write ---");
-
-            try
-            {
-                // Create dataset and table
-                DataSet ds = new DataSet("Products");
-                DataTable dt = new DataTable("Product");
-                dt.Columns.Add("Id", typeof(int));
-                dt.Columns.Add("Name", typeof(string));
-                dt.Columns.Add("Price", typeof(decimal));
-
-                // Sample data
-                dt.Rows.Add(1, "Laptop", 1200.50m);
-                dt.Rows.Add(2, "Mouse", 15.99m);
-                ds.Tables.Add(dt);
-
-                // Save XML file
-                string xmlFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "products.xml");
-
-                if (File.Exists(xmlFilePath))
-                {
-                    Console.WriteLine($"Overwriting existing file: {xmlFilePath}");
-                }
-
-                ds.WriteXml(xmlFilePath, XmlWriteMode.WriteSchema);
-                Console.WriteLine($"XML file created at: {xmlFilePath}");
-
-                // Read XML file into new DataSet
-                DataSet ds2 = new DataSet();
-                ds2.ReadXml(xmlFilePath);
-
-                Console.WriteLine("\nData read back from XML:");
-
-                DataTable? table = ds2.Tables["Product"]; // compiler knows this may be null
-                if (table?.Rows.Count > 0)
-                {
-                    foreach (DataRow row in table.Rows)
-                    {
-                        Console.WriteLine($"ID: {row["Id"]}, Name: {row["Name"]}, Price: {row["Price"]}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("No 'Product' table found or table is empty.");
-                }
-            }
-            catch (IOException ioEx)
-            {
-                Console.WriteLine($"[File Error] {ioEx.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Unexpected Error] {ex.Message}");
-            }
         }
     }
 }
