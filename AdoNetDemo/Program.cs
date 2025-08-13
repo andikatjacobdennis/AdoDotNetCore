@@ -34,17 +34,16 @@ namespace AdoNetDemo
                 Console.WriteLine("5. CRUD Operations");
                 Console.WriteLine("6. Disconnected Architecture");
                 Console.WriteLine("7. Understanding DataSet");
-                Console.WriteLine("8. Serializing DataSet");
-                Console.WriteLine("9. Reading Bulk Data");
-                Console.WriteLine("10. SQL Bulk Copy");
-                Console.WriteLine("11. SQL Injection Example");
-                Console.WriteLine("12. Parameterized Commands (Recommended)");
-                Console.WriteLine("13. Executing Stored Procedures");
-                Console.WriteLine("14. SQL Command Builder");
-                Console.WriteLine("15. Transactions");
-                Console.WriteLine("16. Connect to MS Access Database");
-                Console.WriteLine("17. XML Data Read/Write");
-                Console.WriteLine("18. Disconnected Update Back to SQL Server");
+                Console.WriteLine("8. Executing Stored Procedures");
+                Console.WriteLine("9. Serializing DataSet");
+                Console.WriteLine("10. Reading Bulk Data");
+                Console.WriteLine("11. SQL Bulk Copy");
+                Console.WriteLine("12. SQL Injection Example");
+                Console.WriteLine("13. SQL Command Builder");
+                Console.WriteLine("14. Transactions");
+                Console.WriteLine("15. Connect to MS Access Database");
+                Console.WriteLine("16. XML Data Read/Write");
+                Console.WriteLine("17. Disconnected Update Back to SQL Server");
                 Console.WriteLine("0. Exit");
                 Console.Write("Choose an option: ");
 
@@ -62,22 +61,21 @@ namespace AdoNetDemo
                         case "5": CrudOperations(); break;
                         case "6": DisconnectedArchitecture(); break;
                         case "7": UnderstandingDataSet(); break;
-                        case "8": SerializingDataSet(); break;
-                        case "9": ReadingBulkData(); break;
-                        case "10": SqlBulkCopyDemo(); break;
-                        case "11": SqlInjectionExample(); break;
-                        case "12": ParameterizedCommands(); break;
-                        case "13": ExecutingProcedures(); break;
-                        case "14": SqlCommandBuilderDemo(); break;
-                        case "15": TransactionsDemo(); break;
-                        case "16":
+                        case "8": ExecutingProcedures(); break;
+                        case "9": SerializingDataSet(); break;
+                        case "10": ReadingBulkData(); break;
+                        case "11": SqlBulkCopyDemo(); break;
+                        case "12": SqlInjectionExample(); break;
+                        case "13": SqlCommandBuilderDemo(); break;
+                        case "14": TransactionsDemo(); break;
+                        case "15":
                             if (OperatingSystem.IsWindows())
                                 MsAccessConnection();
                             else
                                 Console.WriteLine("Access DB operations are only supported on Windows.");
                             break;
-                        case "17": XmlDataReadWrite(); break;
-                        case "18": DisconnectedUpdateBackToSql(); break;
+                        case "16": XmlDataReadWrite(); break;
+                        case "17": DisconnectedUpdateBackToSql(); break;
                         case "0": return;
                         default: Console.WriteLine("Invalid choice."); break;
                     }
@@ -257,6 +255,48 @@ namespace AdoNetDemo
             }
         }
 
+        static void ExecutingProcedures()
+        {
+            Console.WriteLine("--- Executing Stored Procedures ---");
+
+            try
+            {
+                using SqlConnection conn = new SqlConnection(connectionString);
+                conn.Open();
+
+                using SqlCommand cmd = new SqlCommand("MyStoredProc", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                // Input parameter
+                cmd.Parameters.Add("@Param1", SqlDbType.NVarChar, 100).Value = "This is a test parameter.";
+
+                // Output parameter
+                SqlParameter outputParam = new SqlParameter("@ResultMessage", SqlDbType.NVarChar, 200)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(outputParam);
+
+                Console.WriteLine("Executing stored procedure...");
+                cmd.ExecuteNonQuery();
+
+                // Get the output parameter value after execution
+                string resultMessage = outputParam.Value as string ?? "<null>";
+
+                Console.WriteLine($"Stored procedure returned: '{resultMessage}'");
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"[SQL Error] {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Unexpected Error] {ex.Message}");
+            }
+        }
+
         static void SerializingDataSet()
         {
             Console.WriteLine("--- Serializing DataSet ---");
@@ -347,83 +387,6 @@ namespace AdoNetDemo
             Console.WriteLine("This query would return all rows, bypassing the intended filter.");
             Console.WriteLine("\nInstead, always use parameterized queries to prevent this attack.");
         }
-
-        static void ParameterizedCommands()
-        {
-            Console.WriteLine("--- Parameterized Commands ---");
-            Console.WriteLine("The recommended way to pass values to queries safely.");
-
-            try
-            {
-                using SqlConnection conn = new SqlConnection(connectionString);
-                conn.Open();
-
-                // Demonstrating a safe parameterized query
-                using SqlCommand cmd = new SqlCommand("SELECT Id, Name FROM YourTable WHERE Id = @id", conn);
-                cmd.Parameters.Add("@id", SqlDbType.Int).Value = 1; // Example: replace with user input
-
-                using SqlDataReader reader = cmd.ExecuteReader();
-                if (reader.Read())
-                {
-                    Console.WriteLine($"Found record for Id 1: {reader["Name"]}");
-                }
-                else
-                {
-                    Console.WriteLine("No record found with Id 1.");
-                }
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine($"[SQL Error] {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Unexpected Error] {ex.Message}");
-            }
-        }
-
-        static void ExecutingProcedures()
-        {
-            Console.WriteLine("--- Executing Stored Procedures ---");
-
-            try
-            {
-                using SqlConnection conn = new SqlConnection(connectionString);
-                conn.Open();
-
-                using SqlCommand cmd = new SqlCommand("MyStoredProc", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-
-                // Input parameter
-                cmd.Parameters.Add("@Param1", SqlDbType.NVarChar, 100).Value = "This is a test parameter.";
-
-                // Output parameter
-                SqlParameter outputParam = new SqlParameter("@ResultMessage", SqlDbType.NVarChar, 200)
-                {
-                    Direction = ParameterDirection.Output
-                };
-                cmd.Parameters.Add(outputParam);
-
-                Console.WriteLine("Executing stored procedure...");
-                cmd.ExecuteNonQuery();
-
-                // Get the output parameter value after execution
-                string resultMessage = outputParam.Value as string ?? "<null>";
-
-                Console.WriteLine($"Stored procedure returned: '{resultMessage}'");
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine($"[SQL Error] {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Unexpected Error] {ex.Message}");
-            }
-        }
-
 
         static void SqlCommandBuilderDemo()
         {
