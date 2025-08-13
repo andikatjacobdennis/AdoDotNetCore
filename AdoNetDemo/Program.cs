@@ -38,11 +38,10 @@ namespace AdoNetDemo
                 Console.WriteLine("9. SQL Bulk Copy");
                 Console.WriteLine("10. Transactions");
                 Console.WriteLine("11. SQL Command Builder");
-                Console.WriteLine("12. Serializing DataSet");
-                Console.WriteLine("13. SQL Injection Example");
-                Console.WriteLine("14. Connect to MS Access Database");
+                Console.WriteLine("12. Connect to MS Access Database");
+                Console.WriteLine("13. Serializing DataSet");
+                Console.WriteLine("14. SQL Injection Example");
                 Console.WriteLine("15. XML Data Read/Write");
-                Console.WriteLine("16. Disconnected Update Back to SQL Server");
                 Console.WriteLine("0. Exit");
                 Console.Write("Choose an option: ");
 
@@ -64,16 +63,15 @@ namespace AdoNetDemo
                         case "9": SqlBulkCopyDemo(); break;
                         case "10": TransactionsDemo(); break;
                         case "11": SqlCommandBuilderDemo(); break;
-                        case "12": SerializingDataSet(); break;
-                        case "13": SqlInjectionExample(); break;
-                        case "14":
+                        case "12":
                             if (OperatingSystem.IsWindows())
                                 MsAccessConnection();
                             else
                                 Console.WriteLine("Access DB operations are only supported on Windows.");
                             break;
+                        case "13": SerializingDataSet(); break;
+                        case "14": SqlInjectionExample(); break;
                         case "15": XmlDataReadWrite(); break;
-                        case "16": DisconnectedUpdateBackToSql(); break;
                         case "0": return;
                         default: Console.WriteLine("Invalid choice."); break;
                     }
@@ -410,6 +408,30 @@ namespace AdoNetDemo
             }
         }
 
+        [SupportedOSPlatform("windows")]
+        static void MsAccessConnection()
+        {
+            Console.WriteLine("--- Connecting to MS Access Database ---");
+            using OleDbConnection conn = new OleDbConnection(accessConnectionString);
+            conn.Open();
+
+            Console.WriteLine("\n1. Inserting a new record using parameterized command.");
+            using OleDbCommand insertCmd = new OleDbCommand("INSERT INTO YourAccessTable (Name, Age) VALUES (?, ?)", conn);
+            // Note: OleDb uses '?' for parameters and they are position-based.
+            insertCmd.Parameters.Add("?", OleDbType.VarWChar).Value = "New Access Record";
+            insertCmd.Parameters.Add("?", OleDbType.Integer).Value = 30;
+            int rows = insertCmd.ExecuteNonQuery();
+            Console.WriteLine($"Inserted {rows} row(s).");
+
+            Console.WriteLine("\n2. Reading data from 'YourAccessTable'.");
+            using OleDbCommand cmd = new OleDbCommand("SELECT TOP 5 ID, Name, Age FROM YourAccessTable", conn);
+            using OleDbDataReader reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                Console.WriteLine($"ID: {reader[0]}, Name: {reader[1]}, Age: {reader[2]}");
+            }
+        }
+
         static void SerializingDataSet()
         {
             Console.WriteLine("--- Serializing DataSet ---");
@@ -481,30 +503,6 @@ namespace AdoNetDemo
             Console.WriteLine("\nInstead, always use parameterized queries to prevent this attack.");
         }
 
-        [SupportedOSPlatform("windows")]
-        static void MsAccessConnection()
-        {
-            Console.WriteLine("--- Connecting to MS Access Database ---");
-            using OleDbConnection conn = new OleDbConnection(accessConnectionString);
-            conn.Open();
-
-            Console.WriteLine("\n1. Inserting a new record using parameterized command.");
-            using OleDbCommand insertCmd = new OleDbCommand("INSERT INTO YourAccessTable (Name, Age) VALUES (?, ?)", conn);
-            // Note: OleDb uses '?' for parameters and they are position-based.
-            insertCmd.Parameters.Add("?", OleDbType.VarWChar).Value = "New Access Record";
-            insertCmd.Parameters.Add("?", OleDbType.Integer).Value = 30;
-            int rows = insertCmd.ExecuteNonQuery();
-            Console.WriteLine($"Inserted {rows} row(s).");
-
-            Console.WriteLine("\n2. Reading data from 'YourAccessTable'.");
-            using OleDbCommand cmd = new OleDbCommand("SELECT TOP 5 ID, Name, Age FROM YourAccessTable", conn);
-            using OleDbDataReader reader = cmd.ExecuteReader();
-            while (reader.Read())
-            {
-                Console.WriteLine($"ID: {reader[0]}, Name: {reader[1]}, Age: {reader[2]}");
-            }
-        }
-
         static void XmlDataReadWrite()
         {
             Console.WriteLine("--- XML Data Read/Write ---");
@@ -556,58 +554,6 @@ namespace AdoNetDemo
             catch (IOException ioEx)
             {
                 Console.WriteLine($"[File Error] {ioEx.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Unexpected Error] {ex.Message}");
-            }
-        }
-
-        static void DisconnectedUpdateBackToSql()
-        {
-            Console.WriteLine("--- Disconnected Update Back to SQL Server ---");
-
-            try
-            {
-                using SqlConnection conn = new SqlConnection(connectionString);
-                using SqlDataAdapter adapter = new SqlDataAdapter("SELECT Id, Name FROM YourTable", conn);
-                using SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
-
-                DataSet ds = new DataSet();
-                int rowsFetched = adapter.Fill(ds, "YourTable");
-
-                if (rowsFetched > 0)
-                {
-                    DataTable? table = ds.Tables["YourTable"];
-                    if (table != null)
-                    {
-                        Console.WriteLine($"Data loaded into DataSet ({table.Rows.Count} existing rows).");
-                        Console.WriteLine("Adding a new row in memory...");
-
-                        DataRow newRow = table.NewRow();
-                        newRow["Name"] = $"NewDisconnectedName_{DateTime.Now:yyyyMMdd_HHmmssfff}";
-                        table.Rows.Add(newRow);
-
-                        Console.WriteLine("Updating the SQL Server table from disconnected DataSet...");
-                        int rowsUpdated = adapter.Update(ds, "YourTable");
-
-                        Console.WriteLine(rowsUpdated > 0
-                            ? $"{rowsUpdated} new row(s) successfully updated back to SQL Server."
-                            : "No rows were updated.");
-                    }
-                    else
-                    {
-                        Console.WriteLine("'YourTable' exists in DB but could not be loaded into DataSet.");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("No rows fetched from 'YourTable'. Disconnected update not performed.");
-                }
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine($"[SQL Error] {ex.Message}");
             }
             catch (Exception ex)
             {
