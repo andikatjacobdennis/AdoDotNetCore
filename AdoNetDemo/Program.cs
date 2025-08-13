@@ -2,6 +2,7 @@ using Microsoft.Data.SqlClient; // For SQL Server database operations
 using System.Data; // For SQL Server database operations
 using System.Data.OleDb; // For MS Access database operations
 using System.Runtime.Versioning; // For Windows-specific features
+using System.Text;
 using System.Text.Json; // For JSON serialization
 
 namespace AdoNetDemo
@@ -26,25 +27,34 @@ namespace AdoNetDemo
             while (true)
             {
                 Console.Clear();
-                Console.WriteLine("=== ADO.NET Training Menu ===");
-                Console.WriteLine("1. Introduction");
-                Console.WriteLine("2. Environment Setup");
-                Console.WriteLine("3. Connected Architecture");
-                Console.WriteLine("4. Executing Commands");
-                Console.WriteLine("5. CRUD Operations");
-                Console.WriteLine("6. Disconnected Architecture");
-                Console.WriteLine("7. Understanding DataSet");
-                Console.WriteLine("8. Executing Stored Procedures");
-                Console.WriteLine("9. SQL Bulk Copy");
-                Console.WriteLine("10. Transactions");
-                Console.WriteLine("11. SQL Command Builder");
-                Console.WriteLine("12. Connect to MS Access Database");
-                Console.WriteLine("13. XML Data Read/Write");
-                Console.WriteLine("14. Serializing DataSet");
-                Console.WriteLine("15. SQL Injection Example");
-                Console.WriteLine("0. Exit");
-                Console.Write("Choose an option: ");
+                Console.ForegroundColor = ConsoleColor.Cyan;
 
+                string border = new string('=', 46);
+                Console.WriteLine("+" + border + "+");
+                Console.WriteLine("|            ADO.NET TRAINING MENU             |");
+                Console.WriteLine("+" + border + "+\n");
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("  1.  Introduction");
+                Console.WriteLine("  2.  Environment Setup");
+                Console.WriteLine("  3.  Connected Architecture");
+                Console.WriteLine("  4.  Executing Commands");
+                Console.WriteLine("  5.  CRUD Operations");
+                Console.WriteLine("  6.  Disconnected Architecture");
+                Console.WriteLine("  7.  Understanding DataSet");
+                Console.WriteLine("  8.  Executing Stored Procedures");
+                Console.WriteLine("  9.  SQL Bulk Copy");
+                Console.WriteLine(" 10.  Transactions");
+                Console.WriteLine(" 11.  SQL Command Builder");
+                Console.WriteLine(" 12.  Connect to MS Access Database");
+                Console.WriteLine(" 13.  XML Data Read/Write");
+                Console.WriteLine(" 14.  Serializing DataSet");
+                Console.WriteLine(" 15.  SQL Injection Example");
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("  0.  Exit");
+                Console.ResetColor();
+                Console.Write("\nChoose an option: ");
                 string? choice = Console.ReadLine();
                 Console.Clear();
 
