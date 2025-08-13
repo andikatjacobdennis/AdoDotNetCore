@@ -35,7 +35,6 @@ namespace AdoNetDemo
                 Console.WriteLine("6. Disconnected Architecture");
                 Console.WriteLine("7. Understanding DataSet");
                 Console.WriteLine("8. Executing Stored Procedures");
-                Console.WriteLine("9. Reading Bulk Data");
                 Console.WriteLine("10. SQL Bulk Copy");
                 Console.WriteLine("11. Serializing DataSet");
                 Console.WriteLine("12. SQL Injection Example");
@@ -62,7 +61,6 @@ namespace AdoNetDemo
                         case "6": DisconnectedArchitecture(); break;
                         case "7": UnderstandingDataSet(); break;
                         case "8": ExecutingProcedures(); break;
-                        case "9": ReadingBulkData(); break;
                         case "10": SqlBulkCopyDemo(); break;
                         case "11": SerializingDataSet(); break;
                         case "12": SqlInjectionExample(); break;
@@ -295,26 +293,6 @@ namespace AdoNetDemo
             {
                 Console.WriteLine($"[Unexpected Error] {ex.Message}");
             }
-        }
-
-        static void ReadingBulkData()
-        {
-            Console.WriteLine("--- Reading Bulk Data ---");
-            Console.WriteLine("This demonstrates a `SqlDataReader` for efficient, forward-only reading of large datasets.");
-            using SqlConnection conn = new SqlConnection(connectionString);
-            conn.Open();
-
-            using SqlCommand cmd = new SqlCommand("SELECT * FROM LargeTable", conn);
-            using SqlDataReader reader = cmd.ExecuteReader();
-
-            Console.WriteLine("Reading data line by line (first 5 rows shown):");
-            int count = 0;
-            while (reader.Read() && count < 5)
-            {
-                Console.WriteLine($"{reader[0]} - {reader[1]}...");
-                count++;
-            }
-            Console.WriteLine($"...and so on. Total fields: {reader.FieldCount}");
         }
 
         static void SqlBulkCopyDemo()
